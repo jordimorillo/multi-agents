@@ -1,0 +1,43 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-10-23T00:00:00Z",
+    "agent_id": "fullstack-architect",
+    "total_entries": 0,
+    "confidence_threshold": 0.75
+  },
+  "knowledge_entries": [
+    {
+      "id": "arch_001",
+      "title": "Security-First Architecture Pattern",
+      "description": "Activate security specialist early in design phase to prevent costly rework",
+      "context": "Any feature involving authentication, payments, or sensitive data handling",
+      "pattern": "@security-specialist → @backend-specialist → @frontend-specialist workflow",
+      "success_metrics": {
+        "rework_reduction": "65%",
+        "security_issues_prevention": "89%",
+        "implementation_time_savings": "23%"
+      },
+      "confidence_score": 0.95,
+      "applicable_scenarios": ["authentication", "payments", "user_data", "api_security"],
+      "related_agents": ["security-specialist", "backend-specialist"],
+      "anti_patterns": ["security_review_after_implementation"],
+      "created_date": "2025-10-23T00:00:00Z",
+      "usage_count": 0,
+      "success_rate": 0.95
+    }
+  ],
+  "patterns_index": {
+    "by_context": {
+      "security": ["arch_001"],
+      "authentication": ["arch_001"],
+      "payments": ["arch_001"]
+    },
+    "by_confidence": {
+      "critical": ["arch_001"],
+      "high": [],
+      "medium": [],
+      "low": []
+    }
+  }
+}

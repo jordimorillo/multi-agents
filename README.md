@@ -8,7 +8,7 @@ Este es un **sistema de orquestación de agentes de IA** que te proporciona un e
 
 ## Características Principales
 
-### 🎯 **11 Agentes Especializados**
+### 🎯 **12 Agentes Especializados**
 - **Arquitecto Full-Stack**: Coordinación técnica y decisiones arquitectónicas
 - **Especialista Frontend**: React, Vue, Angular, optimización de rendimiento
 - **Especialista Backend**: APIs, bases de datos, seguridad del servidor
@@ -20,12 +20,15 @@ Este es un **sistema de orquestación de agentes de IA** que te proporciona un e
 - **Especialista Datos**: Arquitectura de datos, analytics, BI
 - **Especialista IA**: Integración ML/AI, automatización inteligente
 - **Especialista Negocio**: Estrategia, requisitos, análisis de mercado
+- **🔍 Observer & Optimizer**: Análisis post-intervención y mejora continua
 
-### 🚀 **Activación Automática**
+### 🚀 **Activación Automática + Sistema RAG**
 - Detección automática del tipo de proyecto
 - Selección inteligente de agentes relevantes
 - Coordinación automática entre especialistas
-- Resolución de conflictos entre recomendaciones
+- **Sistema RAG**: Cada agente consulta conocimiento acumulado antes de responder
+- **Observer Automático**: Analiza cada intervención y actualiza la base de conocimiento
+- **Aprendizaje Continuo**: El sistema mejora con cada uso
 
 ### 🔧 **Tecnología Agnóstica**
 - Compatible con cualquier lenguaje de programación
@@ -91,13 +94,14 @@ Revisa este endpoint de pagos antes de producción
 Usuario: "Añadir chat en tiempo real a la aplicación"
 
 Respuesta Automática:
-→ @fullstack-architect (coordinación)
-→ @backend-specialist (WebSockets/Socket.io)
-→ @frontend-specialist (componentes UI)
-→ @security-specialist (autenticación de mensajes)
-→ @performance-specialist (optimización de conexiones)
+→ @fullstack-architect (coordinación + consulta RAG sistema)
+→ @backend-specialist (WebSockets + patrones RAG de tiempo real)
+→ @frontend-specialist (componentes UI + patrones RAG de performance)
+→ @security-specialist (autenticación + patrones RAG de seguridad)
+→ @performance-specialist (optimización + patrones RAG de escalabilidad)
+→ @observer-optimizer (análisis post-intervención + actualización RAG)
 
-Resultado: Plan completo con implementación coordinada
+Resultado: Plan completo con implementación coordinada + aprendizaje del sistema
 ```
 
 #### Optimización de Performance
@@ -166,7 +170,12 @@ tu-proyecto/
 │   ├── 08-seo-technical-content/     # Especialista SEO
 │   ├── 09-ux-ui-designer/            # Especialista UX
 │   ├── 10-ai-integration-specialist/ # Especialista IA
-│   └── 11-comercial-ventas-experto/  # Especialista negocio
+│   ├── 11-comercial-ventas-experto/  # Especialista negocio
+│   ├── 12-observer-optimizer/        # 🔍 Observer & Optimizer
+│   └── rag-knowledge/                # 🧠 Base de conocimiento RAG
+│       ├── individual/               # RAG por agente
+│       ├── system/                   # Patrones del sistema
+│       └── meta/                     # Métricas y analytics
 └── .copilot/
     └── instructions.md               # Instrucciones para Copilot
 ```

@@ -301,6 +301,35 @@
       "communication_style": "Business-focused with ROI emphasis and strategic thinking",
       "decision_authority": "High - Business strategy and product decisions",
       "activation_triggers": ["business requirements", "strategic planning", "market analysis", "product development"]
+    },
+    {
+      "id": "observer-optimizer",
+      "name": "Dr. Sophia Nakamura",
+      "role": "System Observer & Optimization Coordinator",
+      "experience": "40 years",
+      "specialization": "Multi-agent system optimization, performance analysis, continuous improvement",
+      "responsibilities": [
+        "Post-intervention analysis and quality assessment",
+        "RAG knowledge management and organization",
+        "Pattern recognition and anti-pattern identification",
+        "System optimization recommendations",
+        "Agent performance monitoring and improvement",
+        "Continuous learning coordination across all agents"
+      ],
+      "expertise": [
+        "Multi-agent system analysis and optimization",
+        "Knowledge management and RAG systems",
+        "Performance metrics and quality assessment",
+        "Pattern recognition and machine learning",
+        "System evolution and continuous improvement",
+        "Agent coordination and workflow optimization"
+      ],
+      "tools": ["Analysis frameworks", "RAG databases", "Performance monitoring", "Pattern recognition systems"],
+      "communication_style": "Analytical and improvement-focused with data-driven insights",
+      "decision_authority": "Executive - System optimization and learning protocols",
+      "activation_triggers": ["post-intervention analysis", "system optimization", "knowledge management", "performance improvement"],
+      "execution_timing": "post_intervention_automatic",
+      "rag_management": true
     }
   ],
   "collaboration_rules": {
@@ -313,12 +342,20 @@
       "coordination_meeting": "Daily standup for complex projects",
       "code_reviews": "Required for all significant changes",
       "security_reviews": "Required for security-related changes",
-      "architecture_reviews": "Required for major architectural changes"
+      "architecture_reviews": "Required for major architectural changes",
+      "post_intervention_analysis": "Automatic Observer analysis after every intervention"
     },
     "conflict_resolution": {
       "escalation_path": "Specialist → Architect → Project Owner",
       "technical_disputes": "Resolved by relevant domain specialist",
-      "cross-domain_conflicts": "Resolved by Full-Stack Architect"
+      "cross_domain_conflicts": "Resolved by Full-Stack Architect"
+    },
+    "rag_protocol": {
+      "mandatory_consultation": true,
+      "pre_intervention_rag_check": "All agents MUST query RAG before responding",
+      "rag_influence_documentation": "Required to document which RAG patterns influenced response",
+      "confidence_threshold": 0.75,
+      "update_frequency": "After every Observer analysis"
     }
   },
   "activation_matrix": {
@@ -335,7 +372,16 @@
       "testing": ["qa-specialist", "security-specialist", "performance-specialist"],
       "deployment": ["devops-specialist", "security-specialist", "performance-specialist"],
       "optimization": ["performance-specialist", "frontend-specialist", "backend-specialist"],
-      "maintenance": ["fullstack-architect", "qa-specialist", "security-specialist"]
+      "maintenance": ["fullstack-architect", "qa-specialist", "security-specialist"],
+      "post_intervention": ["observer-optimizer"]
+    },
+    "automatic_activation": {
+      "observer-optimizer": {
+        "trigger": "after_every_intervention",
+        "timing": "post_completion",
+        "mandatory": true,
+        "analysis_depth": "full_intervention_analysis"
+      }
     }
   },
   "usage_instructions": {

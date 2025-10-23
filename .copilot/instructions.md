@@ -25,6 +25,17 @@ The system automatically activates relevant agents based on:
 - **Development Phase**: Planning, development, testing, deployment, optimization
 - **Task Complexity**: Simple tasks vs. complex architectural decisions
 
+### RAG-Enhanced Intelligence System
+
+**CRITICAL**: All agents MUST consult their RAG (Retrieval-Augmented Generation) knowledge base before responding. This ensures continuous learning and application of proven patterns.
+
+#### Mandatory RAG Protocol (For ALL Agents):
+1. **Pre-Response RAG Query**: Every agent must query their personal RAG and system RAG
+2. **Pattern Application**: Apply relevant patterns with confidence scores >75%
+3. **Anti-Pattern Avoidance**: Actively avoid documented anti-patterns
+4. **Usage Documentation**: Document which RAG patterns influenced the response
+5. **Post-Intervention Learning**: Observer agent automatically analyzes and updates RAG
+
 ### Manual Agent Activation
 
 Use agent mentions in your prompts for specific expertise:
@@ -41,7 +52,16 @@ Use agent mentions in your prompts for specific expertise:
 @data-specialist - Data architecture and analytics
 @ai-specialist - AI/ML integration and automation
 @business-specialist - Business strategy and requirements
+@observer-optimizer - System analysis and continuous improvement (auto-activated)
 ```
+
+### Automatic Observer System
+
+**@observer-optimizer** is automatically activated after EVERY multi-agent intervention to:
+- Analyze intervention quality and agent collaboration
+- Extract learnings and update RAG knowledge base
+- Identify optimization opportunities
+- Ensure continuous system improvement
 
 ## Universal Development Principles
 
@@ -83,27 +103,40 @@ Use agent mentions in your prompts for specific expertise:
 
 **Automatic coordination occurs following this protocol:**
 
-#### 1. Task Analysis
+#### 1. Pre-Intervention RAG Consultation (MANDATORY)
+- **ALL agents** must query their RAG knowledge before responding
+- Apply relevant patterns and avoid known anti-patterns
+- Document RAG influence in responses
+
+#### 2. Task Analysis
 - **@fullstack-architect** analyzes overall impact and coordination needs
 - Determines which specialists need to be involved
 - Identifies potential conflicts or dependencies
+- **Consults system RAG** for optimal activation patterns
 
-#### 2. Specialist Contributions
+#### 3. Specialist Contributions
 Each activated agent provides:
+- **RAG Consultation Results**: Which patterns are being applied
 - **Domain Analysis**: How the task affects their area of expertise
-- **Implementation Approach**: Specific recommendations or code
+- **Implementation Approach**: Specific recommendations or code (RAG-enhanced)
 - **Risk Assessment**: Potential issues or concerns
 - **Dependencies**: What they need from other agents
 
-#### 3. Coordination & Synthesis
+#### 4. Coordination & Synthesis
 - **@fullstack-architect** resolves conflicts between recommendations
 - Synthesizes a coherent approach combining all specialist input
 - Provides implementation order and coordination guidelines
+- **Validates against system RAG patterns**
 
-#### 4. Quality Gates
+#### 5. Quality Gates
 - **@security-specialist** reviews security implications
 - **@performance-specialist** flags performance concerns
 - **@qa-specialist** identifies testing requirements
+
+#### 6. Post-Intervention Analysis (AUTOMATIC)
+- **@observer-optimizer** automatically analyzes the complete intervention
+- Extracts learnings and updates RAG knowledge base
+- Identifies optimization opportunities for future interventions
 
 ### Collaboration Examples
 

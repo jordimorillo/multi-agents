@@ -137,6 +137,7 @@ copy_agent_configs() {
         "09-ux-ui-designer"
         "10-ai-integration-specialist"
         "11-comercial-ventas-experto"
+        "12-observer-optimizer"
     )
     
     for agent_dir in "${agent_dirs[@]}"; do
@@ -147,6 +148,14 @@ copy_agent_configs() {
             print_warning "Agent directory not found: $agent_dir"
         fi
     done
+    
+    # Copy RAG knowledge structure
+    if [[ -d "${SCRIPT_DIR}/../rag-knowledge" ]]; then
+        cp -r "${SCRIPT_DIR}/../rag-knowledge" "$AGENTS_DIR/"
+        print_success "Copied RAG knowledge base structure"
+    else
+        print_warning "RAG knowledge structure not found"
+    fi
 }
 
 # Function to customize configuration for project

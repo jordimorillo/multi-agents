@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-10-23T00:00:00Z",
+    "total_patterns": 1,
+    "system_wide_insights": true
+  },
+  "collaboration_patterns": [
+    {
+      "id": "collab_001",
+      "title": "Security-First Activation Sequence",
+      "description": "Optimal agent activation order for security-sensitive features",
+      "sequence": [
+        "fullstack-architect",
+        "security-specialist",
+        "backend-specialist", 
+        "frontend-specialist",
+        "qa-specialist"
+      ],
+      "context": "Authentication, authorization, payment processing, sensitive data",
+      "success_rate": 0.92,
+      "time_savings": "35% faster implementation",
+      "issue_reduction": "89% fewer security vulnerabilities",
+      "applicable_project_types": ["web_application", "mobile_application", "enterprise_system"],
+      "created_date": "2025-10-23T00:00:00Z"
+    }
+  ],
+  "anti_patterns": [
+    {
+      "id": "anti_001",
+      "title": "Late Security Review",
+      "description": "Activating security specialist after implementation is complete",
+      "problems": [
+        "Requires significant refactoring",
+        "Delays deployment timeline", 
+        "Increases technical debt",
+        "Higher risk of vulnerabilities"
+      ],
+      "better_approach": "Activate security specialist during design phase",
+      "detection_signals": ["security requested after code complete", "security as afterthought"],
+      "prevention": "Mandatory security activation for sensitive features"
+    }
+  ],
+  "optimization_insights": [
+    {
+      "id": "opt_001",
+      "title": "Performance-DevOps Collaboration Pattern",
+      "description": "Coordinated approach between performance and infrastructure specialists",
+      "pattern": "@performance-specialist identifies bottlenecks → @devops-specialist implements infrastructure solutions → joint validation",
+      "effectiveness": "67% improvement in optimization outcomes",
+      "contexts": ["scalability issues", "performance optimization", "infrastructure scaling"]
+    }
+  ]
+}
