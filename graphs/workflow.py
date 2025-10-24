@@ -12,7 +12,20 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 from graphs.state import AgentState, create_initial_state
+
+# Import all 12 agents
+from agents.agent_01_fullstack_architect import FullStackArchitectAgent
 from agents.agent_02_frontend_specialist import FrontendSpecialistAgent
+from agents.agent_03_backend_specialist import BackendSpecialistAgent
+from agents.agent_04_devops_specialist import DevOpsSpecialistAgent
+from agents.agent_05_security_specialist import SecuritySpecialistAgent
+from agents.agent_06_performance_specialist import PerformanceSpecialistAgent
+from agents.agent_07_qa_specialist import QASpecialistAgent
+from agents.agent_08_seo_specialist import SEOSpecialistAgent
+from agents.agent_09_ux_specialist import UXSpecialistAgent
+from agents.agent_10_data_specialist import DataSpecialistAgent
+from agents.agent_11_ai_specialist import AISpecialistAgent
+from agents.agent_12_observer_optimizer import ObserverOptimizerAgent
 
 logger = logging.getLogger(__name__)
 
@@ -43,19 +56,24 @@ class MultiAgentWorkflow:
         self._build_graph()
     
     def _init_agents(self):
-        """Initialize all agents"""
-        logger.info("🔧 Initializing agents...")
+        """Initialize all 12 agents"""
+        logger.info("🔧 Initializing all 12 agents...")
         
-        # TODO: Initialize all agents
-        # For now, just frontend as example
+        # Initialize all specialist agents
+        self.architect_agent = FullStackArchitectAgent(self.config)
         self.frontend_agent = FrontendSpecialistAgent(self.config)
+        self.backend_agent = BackendSpecialistAgent(self.config)
+        self.devops_agent = DevOpsSpecialistAgent(self.config)
+        self.security_agent = SecuritySpecialistAgent(self.config)
+        self.performance_agent = PerformanceSpecialistAgent(self.config)
+        self.qa_agent = QASpecialistAgent(self.config)
+        self.seo_agent = SEOSpecialistAgent(self.config)
+        self.ux_agent = UXSpecialistAgent(self.config)
+        self.data_agent = DataSpecialistAgent(self.config)
+        self.ai_agent = AISpecialistAgent(self.config)
+        self.observer_agent = ObserverOptimizerAgent(self.config)
         
-        # TODO: Add other agents
-        # self.architect_agent = ArchitectAgent(self.config)
-        # self.backend_agent = BackendAgent(self.config)
-        # etc...
-        
-        logger.info("✅ Agents initialized")
+        logger.info("✅ All 12 agents initialized successfully")
     
     def _build_graph(self):
         """Build the LangGraph workflow"""
@@ -64,14 +82,14 @@ class MultiAgentWorkflow:
         # Create graph
         workflow = StateGraph(AgentState)
         
-        # Add nodes (agents)
+        # Add nodes (real agent execute methods)
         workflow.add_node("start", self._start_node)
-        workflow.add_node("architect", self._architect_node)
-        workflow.add_node("security", self._security_node)
-        workflow.add_node("backend", self._backend_node)
-        workflow.add_node("frontend", self.frontend_agent.execute)  # Real agent!
-        workflow.add_node("qa", self._qa_node)
-        workflow.add_node("observer", self._observer_node)
+        workflow.add_node("architect", self.architect_agent.execute)
+        workflow.add_node("security", self.security_agent.execute)
+        workflow.add_node("backend", self.backend_agent.execute)
+        workflow.add_node("frontend", self.frontend_agent.execute)
+        workflow.add_node("qa", self.qa_agent.execute)
+        workflow.add_node("observer", self.observer_agent.execute)
         
         # Define edges (workflow)
         workflow.set_entry_point("start")
@@ -114,105 +132,25 @@ class MultiAgentWorkflow:
         logger.info("✅ Workflow graph built")
     
     # ═══════════════════════════════════════════════════════════
-    # NODE FUNCTIONS (Placeholders - to be replaced with real agents)
+    # NODE FUNCTIONS
     # ═══════════════════════════════════════════════════════════
     
     async def _start_node(self, state: AgentState) -> AgentState:
-        """Initial node - setup Linear issues"""
-        logger.info("🚀 Starting workflow...")
+        """
+        Initial node - setup Linear issues and prepare state
+        
+        This node:
+        - Creates main Linear issue
+        - Creates sub-issues for each agent
+        - Initializes workflow metadata
+        """
+        logger.info("🚀 Starting multi-agent workflow...")
         
         # TODO: Create Linear main issue
-        # TODO: Create sub-issues for each agent
+        # TODO: Create sub-issues for each agent that will be activated
         
-        state['messages'].append("📋 Workflow initialized")
-        return state
-    
-    async def _architect_node(self, state: AgentState) -> AgentState:
-        """Architect analyzes and plans"""
-        logger.info("🏗️  Architect analyzing task...")
-        
-        # Placeholder - would be real ArchitectAgent
-        state['agent_results']['architect'] = {
-            'summary': 'Task analyzed. Requires frontend + backend work.',
-            'complexity': 'moderate',
-            'estimated_time': '2 hours'
-        }
-        state['completed_agents'].append('architect')
-        state['messages'].append("✅ Architect completed analysis")
-        
-        # Set routing flags
-        state['requires_testing'] = True
-        state['requires_devops'] = False
-        
-        return state
-    
-    async def _security_node(self, state: AgentState) -> AgentState:
-        """Security reviews requirements"""
-        logger.info("🛡️  Security reviewing...")
-        
-        # Placeholder
-        state['agent_results']['security'] = {
-            'summary': 'Security review passed. No critical issues.',
-            'vulnerabilities': [],
-            'approved': True
-        }
-        state['completed_agents'].append('security')
-        state['security_approved'] = True
-        state['messages'].append("✅ Security approved")
-        
-        return state
-    
-    async def _backend_node(self, state: AgentState) -> AgentState:
-        """Backend implementation"""
-        logger.info("🔧 Backend working...")
-        
-        # Placeholder - would be real BackendAgent
-        state['agent_results']['backend'] = {
-            'summary': 'Backend API endpoints implemented',
-            'files_created': ['src/api/auth.py', 'src/api/users.py'],
-            'tests': 'Unit tests included'
-        }
-        state['completed_agents'].append('backend')
-        state['messages'].append("✅ Backend completed")
-        
-        return state
-    
-    async def _qa_node(self, state: AgentState) -> AgentState:
-        """QA testing"""
-        logger.info("✅ QA testing...")
-        
-        # Placeholder
-        state['agent_results']['qa'] = {
-            'summary': 'All tests passed',
-            'test_results': {
-                'unit': 'pass',
-                'integration': 'pass',
-                'e2e': 'pass'
-            }
-        }
-        state['completed_agents'].append('qa')
-        state['messages'].append("✅ QA tests passed")
-        
-        return state
-    
-    async def _observer_node(self, state: AgentState) -> AgentState:
-        """Observer analyzes and updates RAG"""
-        logger.info("🔍 Observer analyzing intervention...")
-        
-        # TODO: Extract patterns and update RAG
-        
-        state['agent_results']['observer'] = {
-            'summary': 'Intervention analyzed. RAG updated.',
-            'patterns_extracted': 2,
-            'quality_score': 8.5
-        }
-        state['completed_agents'].append('observer')
-        state['messages'].append("✅ Observer completed")
-        
-        # Calculate final metrics
-        state['execution_time_seconds'] = (
-            datetime.now() - datetime.fromisoformat(state['started_at'])
-        ).total_seconds()
+        state['messages'].append("📋 Workflow initialized with 12 specialized agents")
+        state['messages'].append(f"🎯 Task: {state['task_description'][:100]}...")
         
         return state
     
