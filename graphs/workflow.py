@@ -105,9 +105,11 @@ class MultiAgentWorkflow:
         workflow.add_edge("qa", "observer")
         workflow.add_edge("observer", END)
         
-        # Compile with checkpointing
-        self.checkpointer = SqliteSaver.from_conn_string(":memory:")
-        self.graph = workflow.compile(checkpointer=self.checkpointer)
+        # Compile WITHOUT checkpointing for now (async compatibility issue)
+        # TODO: Use AsyncSqliteSaver when available or implement custom checkpointer
+        # self.checkpointer = SqliteSaver.from_conn_string(":memory:")
+        # self.graph = workflow.compile(checkpointer=self.checkpointer)
+        self.graph = workflow.compile()
         
         logger.info("✅ Workflow graph built")
     

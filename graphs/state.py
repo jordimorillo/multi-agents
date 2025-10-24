@@ -45,7 +45,7 @@ class AgentState(TypedDict):
     # ═══════════════════════════════════════════════════════════
     # AGENT COORDINATION
     # ═══════════════════════════════════════════════════════════
-    agent_results: Annotated[Dict[str, Any], add]  # agent_id -> result
+    agent_results: Dict[str, Any]  # agent_id -> result (not accumulated, just updated)
     completed_agents: Annotated[List[str], add]  # List of completed agent IDs
     failed_agents: Annotated[List[str], add]  # List of failed agent IDs
     blocked_agents: List[str]  # Agents waiting for dependencies

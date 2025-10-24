@@ -8,9 +8,7 @@ import json
 from typing import List
 from langchain.tools import Tool
 
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from base.langgraph_agent import LangChainAgentBase
+from agents.base.langgraph_agent import LangChainAgentBase
 
 
 class FrontendSpecialistAgent(LangChainAgentBase):

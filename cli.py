@@ -53,13 +53,6 @@ async def execute_task(task_description: str):
         "temperature": float(os.getenv("DEFAULT_TEMPERATURE", "0.2"))
     }
     
-    # Crear estado inicial
-    initial_state = create_initial_state(
-        task_description=task_description,
-        github_repo=github_repo,
-        github_branch="main"
-    )
-    
     print("=" * 80)
     print("🤖 AGENTES ACTIVADOS:")
     print("=" * 80)
@@ -72,6 +65,10 @@ async def execute_task(task_description: str):
     print("=" * 80)
     print()
     
+    # Crear estado inicial
+    linear_team_id = os.getenv("LINEAR_TEAM_ID", "")
+    project_path = os.getcwd()
+    
     # Crear y ejecutar workflow
     try:
         workflow = MultiAgentWorkflow(config)
@@ -79,7 +76,12 @@ async def execute_task(task_description: str):
         
         # Ejecutar el workflow
         print("🎯 Ejecutando coordinación multi-agente...\n")
-        final_state = await workflow.execute(initial_state)
+        final_state = await workflow.execute(
+            task_description=task_description,
+            project_path=project_path,
+            linear_team_id=linear_team_id,
+            github_repo=github_repo or "unknown/repo"
+        )
         
         # Mostrar resultados
         print("\n" + "=" * 80)
