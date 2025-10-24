@@ -8,8 +8,13 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Directorio del script
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Directorio del script (resuelve symlinks para que /usr/local/bin/agent apunte al proyecto real)
+if command -v readlink >/dev/null 2>&1; then
+    SCRIPT_DIR="$( cd "$( dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd )"
+else
+    # Fallback si no existe readlink -f
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+fi
 
 # Cambiar al directorio del script
 cd "$SCRIPT_DIR"
