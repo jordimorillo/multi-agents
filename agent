@@ -10,17 +10,19 @@ NC='\033[0m' # No Color
 
 # Directorio del script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Cambiar al directorio del script
 cd "$SCRIPT_DIR"
 
 # Verificar que existe el venv
-if [ ! -d "venv" ]; then
+if [ ! -d "$SCRIPT_DIR/venv" ]; then
     echo -e "${RED}❌ Error: Virtual environment no encontrado${NC}"
-    echo "   Ejecuta primero: ./setup.sh"
+    echo "   Ejecuta primero: cd $SCRIPT_DIR && ./setup.sh"
     exit 1
 fi
 
-# Activar entorno virtual
-source venv/bin/activate
+# Activar entorno virtual (con path absoluto)
+source "$SCRIPT_DIR/venv/bin/activate"
 
 # Si no hay argumentos, mostrar ayuda
 if [ $# -eq 0 ]; then
@@ -54,7 +56,7 @@ fi
 echo -e "${GREEN}🚀 Iniciando sistema multi-agente...${NC}"
 echo ""
 
-python cli.py "$@"
+python "$SCRIPT_DIR/cli.py" "$@"
 
 # Capturar código de salida
 EXIT_CODE=$?
