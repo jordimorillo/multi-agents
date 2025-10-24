@@ -1,0 +1,70 @@
+#!/bin/bash
+# Script para ejecutar el sistema multi-agente
+
+# Colores para output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Directorio del script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
+
+# Verificar que existe el venv
+if [ ! -d "venv" ]; then
+    echo -e "${RED}❌ Error: Virtual environment no encontrado${NC}"
+    echo "   Ejecuta primero: ./setup.sh"
+    exit 1
+fi
+
+# Activar entorno virtual
+source venv/bin/activate
+
+# Si no hay argumentos, mostrar ayuda
+if [ $# -eq 0 ]; then
+    echo -e "${BLUE}════════════════════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}🤖 SISTEMA MULTI-AGENTE${NC}"
+    echo -e "${BLUE}════════════════════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo -e "${YELLOW}Uso:${NC}"
+    echo "  ./agent \"<tu orden aquí>\""
+    echo ""
+    echo -e "${YELLOW}Ejemplos:${NC}"
+    echo "  ./agent \"Implementar traducciones a catalán e inglés\""
+    echo "  ./agent \"Añadir autenticación OAuth\""
+    echo "  ./agent \"Optimizar performance del frontend\""
+    echo "  ./agent \"Crear sistema de comentarios\""
+    echo ""
+    echo -e "${YELLOW}Agentes disponibles:${NC}"
+    echo "  📐 @fullstack-architect  - Coordinación y arquitectura"
+    echo "  💻 @frontend-specialist  - Desarrollo frontend"
+    echo "  🔧 @backend-specialist   - Desarrollo backend"
+    echo "  🛡️  @security-specialist  - Seguridad y auditorías"
+    echo "  ⚡ @performance-specialist - Optimización"
+    echo "  ✅ @qa-specialist        - Testing y calidad"
+    echo "  🔍 @observer-optimizer   - Análisis y mejora continua"
+    echo ""
+    echo -e "${BLUE}════════════════════════════════════════════════════════════════════════════════${NC}"
+    exit 0
+fi
+
+# Ejecutar el CLI con el prompt del usuario
+echo -e "${GREEN}🚀 Iniciando sistema multi-agente...${NC}"
+echo ""
+
+python cli.py "$@"
+
+# Capturar código de salida
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 0 ]; then
+    echo ""
+    echo -e "${GREEN}✅ Ejecución completada exitosamente${NC}"
+else
+    echo ""
+    echo -e "${RED}❌ Error en la ejecución (código: $EXIT_CODE)${NC}"
+fi
+
+exit $EXIT_CODE

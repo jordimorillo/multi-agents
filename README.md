@@ -2,6 +2,35 @@
 
 Una configuración profesional de agentes de IA especializados con 30+ años de experiencia cada uno, diseñado para trabajar con cualquier stack tecnológico y tipo de proyecto.
 
+## 🚀 Inicio Rápido
+
+### Instalación (una sola vez)
+```bash
+./setup.sh
+```
+
+### Configuración
+Edita el archivo `.env` con tus API keys:
+```bash
+nano .env
+```
+
+### Uso Simple
+```bash
+# Dar una orden al sistema multi-agente
+./agent "Tu orden aquí"
+
+# Ejemplos
+./agent "Implementar traducciones a catalán e inglés"
+./agent "Añadir autenticación OAuth"
+./agent "Optimizar performance del frontend"
+./agent "Crear API REST para usuarios"
+```
+
+Eso es todo! El sistema coordinará automáticamente todos los agentes necesarios.
+
+---
+
 ## ¿Qué es este sistema?
 
 Este es un **sistema de orquestación de agentes de IA** que te proporciona un equipo de especialistas virtuales para asistir en cualquier proyecto de desarrollo de software. Cada agente tiene experticia profunda en su dominio y colaboran automáticamente para proporcionar soluciones coherentes y profesionales.

@@ -1,0 +1,163 @@
+version: '3.8'
+
+services:
+  # Redis - Message Broker y Cache
+  redis:
+    image: redis:7-alpine
+    container_name: multiagent-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # PostgreSQL - Estado y Persistencia
+  postgres:
+    image: postgres:15-alpine
+    container_name: multiagent-db
+    environment:
+      POSTGRES_USER: multiagent
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: multiagent
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U multiagent" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Orchestrator - API Central
+  orchestrator:
+    build:
+      context: ../orchestrator
+      dockerfile: Dockerfile
+    container_name: multiagent-orchestrator
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://multiagent:${DB_PASSWORD:-changeme}@postgres:5432/multiagent
+      - LINEAR_API_KEY=${LINEAR_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../orchestrator:/app
+      - agent-logs:/app/logs
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Agent 01 - Fullstack Architect
+  agent-01:
+    build:
+      context: ../agents
+      dockerfile: Dockerfile
+    container_name: multiagent-agent-01
+    environment:
+      - AGENT_ID=agent-01-fullstack-architect
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://multiagent:${DB_PASSWORD:-changeme}@postgres:5432/multiagent
+      - LINEAR_API_KEY=${LINEAR_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPO=${GITHUB_REPO}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - redis
+      - postgres
+      - orchestrator
+    volumes:
+      - ../agents:/app
+      - agent-logs:/app/logs
+    command: python agent_01_fullstack_architect.py
+    restart: unless-stopped
+
+  # Agent 02 - Frontend Specialist
+  agent-02:
+    build:
+      context: ../agents
+      dockerfile: Dockerfile
+    container_name: multiagent-agent-02
+    environment:
+      - AGENT_ID=agent-02-frontend-specialist
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://multiagent:${DB_PASSWORD:-changeme}@postgres:5432/multiagent
+      - LINEAR_API_KEY=${LINEAR_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPO=${GITHUB_REPO}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - redis
+      - postgres
+      - orchestrator
+    volumes:
+      - ../agents:/app
+      - agent-logs:/app/logs
+    command: python agent_02_frontend_specialist.py
+    restart: unless-stopped
+
+  # Agent 03 - Backend Specialist
+  agent-03:
+    build:
+      context: ../agents
+      dockerfile: Dockerfile
+    container_name: multiagent-agent-03
+    environment:
+      - AGENT_ID=agent-03-backend-specialist
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://multiagent:${DB_PASSWORD:-changeme}@postgres:5432/multiagent
+      - LINEAR_API_KEY=${LINEAR_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPO=${GITHUB_REPO}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - redis
+      - postgres
+      - orchestrator
+    volumes:
+      - ../agents:/app
+      - agent-logs:/app/logs
+    command: python agent_03_backend_specialist.py
+    restart: unless-stopped
+
+  # Puedes añadir los demás agentes siguiendo el mismo patrón...
+  # agent-04, agent-05, ... agent-12
+
+  # Dashboard Web (Opcional)
+  dashboard:
+    build:
+      context: ../dashboard
+      dockerfile: Dockerfile
+    container_name: multiagent-dashboard
+    environment:
+      - VITE_API_URL=http://orchestrator:8000
+      - VITE_WS_URL=ws://orchestrator:8000/ws
+    ports:
+      - "3000:3000"
+    depends_on:
+      - orchestrator
+    volumes:
+      - ../dashboard:/app
+      - /app/node_modules
+
+volumes:
+  redis-data:
+  postgres-data:
+  agent-logs:
+
+
+networks:
+  default:
+    name: multiagent-network
