@@ -8,8 +8,11 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
-load_dotenv()
+# Cargar variables de entorno desde el directorio del script
+# (no desde el directorio actual de ejecución)
+script_dir = Path(__file__).parent.absolute()
+dotenv_path = script_dir / '.env'
+load_dotenv(dotenv_path=dotenv_path)
 
 # Importar componentes necesarios
 from graphs.workflow import MultiAgentWorkflow
