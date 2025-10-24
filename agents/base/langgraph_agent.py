@@ -8,6 +8,7 @@ import json
 import logging
 from typing import List, Dict, Any, Optional
 from abc import ABC, abstractmethod
+from pydantic import BaseModel, Field
 
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -25,6 +26,13 @@ from integrations.github.client import GitHubClient, AgentGitHubWorkflow, FileCh
 from graphs.state import AgentState, AgentResult
 
 logger = logging.getLogger(__name__)
+
+
+# Pydantic schemas for structured tools
+class WriteFileInput(BaseModel):
+    """Input schema for write_file tool"""
+    path: str = Field(description="Path to the file to write")
+    content: str = Field(description="Content to write to the file")
 
 
 class LangChainAgentBase(ABC):
@@ -171,10 +179,11 @@ class LangChainAgentBase(ABC):
                 func=self._read_file,
                 description="Read contents of a file. Input: file path"
             ),
-            Tool(
+            StructuredTool.from_function(
+                func=self._write_file_structured,
                 name="write_file",
-                func=self._write_file,
-                description="Write content to a file. Input: JSON with 'path' and 'content'"
+                description="Write content to a file",
+                args_schema=WriteFileInput
             ),
             Tool(
                 name="list_files",
@@ -229,12 +238,25 @@ class LangChainAgentBase(ABC):
             return f"Error reading file: {e}"
     
     def _write_file(self, input_json: str) -> str:
-        """Write file tool"""
+        """Write file tool (legacy - kept for compatibility)"""
         try:
             data = json.loads(input_json)
             path = data['path']
             content = data['content']
             
+            full_path = os.path.join(self.config.get('project_path', ''), path)
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            
+            with open(full_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            return f"✅ File written: {path} ({len(content)} chars)"
+        except Exception as e:
+            return f"Error writing file: {e}"
+    
+    def _write_file_structured(self, path: str, content: str) -> str:
+        """Write file tool (structured with Pydantic)"""
+        try:
             full_path = os.path.join(self.config.get('project_path', ''), path)
             os.makedirs(os.path.dirname(full_path), exist_ok=True)
             

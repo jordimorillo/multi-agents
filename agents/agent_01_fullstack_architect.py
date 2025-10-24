@@ -64,17 +64,13 @@ When breaking down tasks:
 - **Testing required?** → Activate @qa-specialist
 
 ## Output Format
-Provide:
-```json
-{
-  "architecture": "High-level design description",
-  "components": ["component1", "component2"],
-  "agents_needed": ["@agent-name", ...],
-  "implementation_order": ["step1", "step2", ...],
-  "risks": ["risk1", "risk2"],
-  "success_criteria": ["criteria1", ...]
-}
-```
+Provide structured analysis including:
+- Architecture: High-level design description
+- Components: List of system components
+- Agents needed: Which specialists to activate
+- Implementation order: Step-by-step plan
+- Risks: Potential issues to address
+- Success criteria: How to measure completion
 
 Be strategic, thorough, and clear in your architectural decisions.
 """
