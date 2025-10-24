@@ -8,7 +8,9 @@ import json
 import logging
 from typing import List, Dict, Any, Optional
 from abc import ABC, abstractmethod
-from pydantic import BaseModel, Field
+
+# Use pydantic v1 for LangChain compatibility
+from pydantic.v1 import BaseModel, Field
 
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -28,7 +30,7 @@ from graphs.state import AgentState, AgentResult
 logger = logging.getLogger(__name__)
 
 
-# Pydantic schemas for structured tools
+# Pydantic v1 schemas for structured tools (LangChain compatibility)
 class WriteFileInput(BaseModel):
     """Input schema for write_file tool"""
     path: str = Field(description="Path to the file to write")
