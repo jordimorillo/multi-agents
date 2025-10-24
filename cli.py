@@ -105,12 +105,51 @@ async def execute_task(task_description: str):
         
         # Mostrar resumen de cada agente
         print("\n📝 Resumen de Agentes:")
-        for result in final_state.get('agent_results', []):
-            status_emoji = "✅" if result['status'] == 'success' else "❌"
-            print(f"\n   {status_emoji} {result['agent_name']}")
-            print(f"      {result['message'][:100]}...")
-            if result.get('files_modified'):
-                print(f"      Archivos: {', '.join(result['files_modified'][:3])}")
+        agent_results = final_state.get('agent_results', {})
+        if isinstance(agent_results, dict):
+            for agent_name, result in agent_results.items():
+                if isinstance(result, dict):
+                    # Check both 'success' and 'status' for compatibility
+                    success = result.get('success', result.get('status') == 'success')
+                    status_emoji = "✅" if success else "❌"
+                    
+                    # Get name and summary/message
+                    display_name = result.get('agent_name', agent_name)
+                    summary = result.get('summary', result.get('message', 'No details'))
+                    
+                    print(f"\n   {status_emoji} {display_name}")
+                    if summary and len(summary) > 0:
+                        print(f"      {summary[:200]}...")
+                    
+                    # Show files if present
+                    files_created = result.get('files_created', [])
+                    files_modified = result.get('files_modified', [])
+                    all_files = files_created + files_modified
+                    if all_files:
+                        print(f"      📁 Archivos: {', '.join(all_files[:3])}")
+                        if len(all_files) > 3:
+                            print(f"         ... y {len(all_files) - 3} más")
+                    
+                    # Show metrics if present
+                    tokens = result.get('tokens_used', 0)
+                    cost = result.get('cost_usd', 0.0)
+                    if tokens > 0:
+                        print(f"      💰 Tokens: {tokens:,} | Costo: ${cost:.4f}")
+                    
+                    # Show PR if present
+                    pr_url = result.get('pr_url', '')
+                    if pr_url:
+                        print(f"      🔗 PR: {pr_url}")
+        elif isinstance(agent_results, list):
+            for result in agent_results:
+                if isinstance(result, dict):
+                    success = result.get('success', result.get('status') == 'success')
+                    status_emoji = "✅" if success else "❌"
+                    display_name = result.get('agent_name', 'Unknown')
+                    summary = result.get('summary', result.get('message', 'No details'))
+                    print(f"\n   {status_emoji} {display_name}")
+                    if summary and len(summary) > 0:
+                        print(f"      {summary[:200]}...")
         
         print("\n" + "=" * 80)
         print("🎉 Sistema multi-agente finalizado!")

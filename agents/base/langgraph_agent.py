@@ -62,17 +62,18 @@ class LangChainAgentBase(ABC):
         self.specialization = config.get('specialization', '')
         self.experience = config.get('experience', '30 years')
         
+        # Set API key as environment variable (LangChain workaround)
+        if 'openai_api_key' in config:
+            os.environ['OPENAI_API_KEY'] = config['openai_api_key']
+        
         # LLM
         self.llm = ChatOpenAI(
             model=config.get('model', 'gpt-4-turbo-preview'),
-            temperature=config.get('temperature', 0.2),
-            api_key=config.get('openai_api_key')
+            temperature=config.get('temperature', 0.2)
         )
         
         # RAG vector store
-        self.embeddings = OpenAIEmbeddings(
-            api_key=config.get('openai_api_key')
-        )
+        self.embeddings = OpenAIEmbeddings()
         self.vector_store = None
         self._init_rag()
         
