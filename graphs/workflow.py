@@ -76,60 +76,75 @@ class MultiAgentWorkflow:
         logger.info("✅ All 12 agents initialized successfully")
     
     def _build_graph(self):
-        """Build the LangGraph workflow"""
-        logger.info("🔧 Building workflow graph...")
+        """
+        Build DYNAMIC workflow - Architect decides who runs each iteration
+        
+        Flow:
+        1. Start → Architect (analyzes task)
+        2. Architect → Route (decides which agents to activate)
+        3. Execute agents in parallel
+        4. Check completion → Back to Architect OR End
+        """
+        logger.info("🔧 Building dynamic workflow graph...")
         
         # Create graph
         workflow = StateGraph(AgentState)
         
-        # Add nodes (real agent execute methods)
+        # Add all agent nodes
         workflow.add_node("start", self._start_node)
         workflow.add_node("architect", self.architect_agent.execute)
-        workflow.add_node("security", self.security_agent.execute)
-        workflow.add_node("backend", self.backend_agent.execute)
+        workflow.add_node("router", self._router_node)  # Dynamic routing node
+        
+        # Add all specialist agents
         workflow.add_node("frontend", self.frontend_agent.execute)
+        workflow.add_node("backend", self.backend_agent.execute)
+        workflow.add_node("devops", self.devops_agent.execute)
+        workflow.add_node("security", self.security_agent.execute)
+        workflow.add_node("performance", self.performance_agent.execute)
         workflow.add_node("qa", self.qa_agent.execute)
+        workflow.add_node("seo", self.seo_agent.execute)
+        workflow.add_node("ux", self.ux_agent.execute)
+        workflow.add_node("data", self.data_agent.execute)
+        workflow.add_node("ai", self.ai_agent.execute)
         workflow.add_node("observer", self.observer_agent.execute)
         
-        # Define edges (workflow)
+        # Initial flow
         workflow.set_entry_point("start")
         workflow.add_edge("start", "architect")
-        workflow.add_edge("architect", "security")
+        workflow.add_edge("architect", "router")
         
-        # Conditional: Security approval
+        # Router decides which agents to execute
         workflow.add_conditional_edges(
-            "security",
-            self._should_continue_after_security,
+            "router",
+            self._route_to_agents,
             {
-                "approved": "backend",
-                "rejected": END,
-                "needs_revision": "architect"
+                "frontend": "frontend",
+                "backend": "backend",
+                "devops": "devops",
+                "security": "security",
+                "performance": "performance",
+                "qa": "qa",
+                "seo": "seo",
+                "ux": "ux",
+                "data": "data",
+                "ai": "ai",
+                "observer": "observer",
+                "end": END
             }
         )
         
-        # Parallel execution: Backend + Frontend
-        workflow.add_edge("backend", "frontend")
+        # All agents return to router to check next step
+        for agent in ["frontend", "backend", "devops", "security", "performance", 
+                      "qa", "seo", "ux", "data", "ai"]:
+            workflow.add_edge(agent, "router")
         
-        # Conditional: Check if both completed
-        workflow.add_conditional_edges(
-            "frontend",
-            self._should_run_qa,
-            {
-                "run_qa": "qa",
-                "skip_qa": "observer"
-            }
-        )
-        
-        workflow.add_edge("qa", "observer")
+        # Observer ends the workflow (final analysis)
         workflow.add_edge("observer", END)
         
-        # Compile WITHOUT checkpointing for now (async compatibility issue)
-        # TODO: Use AsyncSqliteSaver when available or implement custom checkpointer
-        # self.checkpointer = SqliteSaver.from_conn_string(":memory:")
-        # self.graph = workflow.compile(checkpointer=self.checkpointer)
+        # Compile
         self.graph = workflow.compile()
         
-        logger.info("✅ Workflow graph built")
+        logger.info("✅ Dynamic workflow graph built")
     
     # ═══════════════════════════════════════════════════════════
     # NODE FUNCTIONS
@@ -146,11 +161,38 @@ class MultiAgentWorkflow:
         """
         logger.info("🚀 Starting multi-agent workflow...")
         
-        # TODO: Create Linear main issue
-        # TODO: Create sub-issues for each agent that will be activated
-        
         state['messages'].append("📋 Workflow initialized with 12 specialized agents")
         state['messages'].append(f"🎯 Task: {state['task_description'][:100]}...")
+        state['iteration'] = 0
+        state['next_agents'] = []  # Agents to execute in next iteration
+        
+        return state
+    
+    async def _router_node(self, state: AgentState) -> AgentState:
+        """
+        Router node - reads architect's decision and updates routing
+        
+        The Architect agent sets state['next_agents'] with list of agent IDs
+        to execute in this iteration
+        """
+        state['iteration'] = state.get('iteration', 0) + 1
+        logger.info(f"🔀 Router: Iteration {state['iteration']}")
+        
+        # Check if task is complete
+        if state.get('task_complete'):
+            logger.info("✅ Task marked as complete by Architect")
+            state['next_agents'] = ['observer']  # Final step
+            return state
+        
+        # Get next agents from architect's decision
+        next_agents = state.get('next_agents', [])
+        
+        if not next_agents:
+            # No more agents to execute, go to observer
+            logger.info("📊 No more agents scheduled, moving to Observer")
+            state['next_agents'] = ['observer']
+        else:
+            logger.info(f"🎯 Next agents: {', '.join(next_agents)}")
         
         return state
     
@@ -158,38 +200,55 @@ class MultiAgentWorkflow:
     # CONDITIONAL ROUTING FUNCTIONS
     # ═══════════════════════════════════════════════════════════
     
-    def _should_continue_after_security(
-        self,
-        state: AgentState
-    ) -> Literal["approved", "rejected", "needs_revision"]:
-        """Decide what to do after security review"""
+    def _route_to_agents(self, state: AgentState) -> str:
+        """
+        Dynamic routing based on Architect's decisions
         
-        if state.get('security_approved'):
-            return "approved"
+        The Architect sets state['next_agents'] with the list of agent IDs.
+        This function pops the next agent from the queue.
         
-        security_result = state.get('agent_results', {}).get('security', {})
-        vulnerabilities = security_result.get('vulnerabilities', [])
+        Returns:
+            Agent ID to execute next, or 'end' if done
+        """
+        next_agents = state.get('next_agents', [])
         
-        if any(v.get('severity') == 'critical' for v in vulnerabilities):
-            return "rejected"
+        if not next_agents:
+            return "end"
         
-        return "needs_revision"
-    
-    def _should_run_qa(
-        self,
-        state: AgentState
-    ) -> Literal["run_qa", "skip_qa"]:
-        """Decide if QA should run"""
+        # Pop the first agent from the queue
+        next_agent = next_agents.pop(0)
+        state['next_agents'] = next_agents
         
-        if not state.get('requires_testing', True):
-            return "skip_qa"
+        # Map agent IDs to node names
+        agent_map = {
+            'agent-02-frontend-specialist': 'frontend',
+            'agent-03-backend-specialist': 'backend',
+            'agent-04-devops-specialist': 'devops',
+            'agent-05-security-specialist': 'security',
+            'agent-06-performance-specialist': 'performance',
+            'agent-07-qa-specialist': 'qa',
+            'agent-08-seo-specialist': 'seo',
+            'agent-09-ux-specialist': 'ux',
+            'agent-10-data-specialist': 'data',
+            'agent-11-ai-specialist': 'ai',
+            'agent-12-observer-optimizer': 'observer',
+            # Short names as well
+            'frontend': 'frontend',
+            'backend': 'backend',
+            'devops': 'devops',
+            'security': 'security',
+            'performance': 'performance',
+            'qa': 'qa',
+            'seo': 'seo',
+            'ux': 'ux',
+            'data': 'data',
+            'ai': 'ai',
+            'observer': 'observer'
+        }
         
-        # Check if both backend and frontend completed
-        completed = set(state.get('completed_agents', []))
-        if 'backend' in completed and 'frontend' in completed:
-            return "run_qa"
+        return agent_map.get(next_agent, 'end')
         
-        return "skip_qa"
+        return state
     
     # ═══════════════════════════════════════════════════════════
     # PUBLIC API

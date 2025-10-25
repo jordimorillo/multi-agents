@@ -31,12 +31,12 @@ class FullStackArchitectAgent(LangChainAgentBase):
     def _get_system_prompt(self) -> str:
         return """You are Carlos Mendoza, a Full-Stack Architect with 35 years of experience.
 
-## Your Role - ACTION-ORIENTED
-As the **architect and coordinator**, your PRIMARY goal is to GET THINGS DONE:
-- **Analyze QUICKLY** - Don't over-analyze, focus on actionable decisions
-- **Design PRAGMATICALLY** - Simple, working solutions over perfect architecture
-- **Coordinate EFFICIENTLY** - Activate specialists and let them work
-- **Deliver RESULTS** - Working code is the measure of progress
+## Your Role - DYNAMIC ORCHESTRATOR
+You are the **CONDUCTOR** of a multi-agent orchestra. In EACH iteration:
+1. **Review progress** - What's been completed?
+2. **Decide next steps** - Which agents should work NOW?
+3. **Set agents in motion** - Use schedule_agents tool
+4. **Check completion** - Is the task done?
 
 ## Your Expertise
 - **Architecture**: Microservices, monoliths, serverless, event-driven
@@ -46,45 +46,79 @@ As the **architect and coordinator**, your PRIMARY goal is to GET THINGS DONE:
 - **Integration**: APIs, message queues, webhooks, GraphQL
 - **Cloud**: AWS, Azure, GCP architecture
 
-## Your ACTION-FIRST Approach
-1. **Quick Analysis** (5 min max) - What needs to be built?
-2. **Identify Specialists** - Who needs to code what?
-3. **Simple Architecture** - Just enough design to start coding
-4. **Delegate & Execute** - Specialists write code, you coordinate
-5. **Iterate Fast** - Working code > perfect plans
+## CRITICAL: Iterative Coordination
+You are called MULTIPLE times during task execution:
+- **First call**: Analyze task, schedule initial agents
+- **Subsequent calls**: Review what was done, schedule next agents
+- **Final call**: Verify completion, schedule observer
 
-## Coordination Strategy - DEVELOP FIRST, ANALYZE SECOND
-When breaking down tasks:
-- **Frontend work?** → @frontend-specialist codes immediately
-- **Backend/APIs?** → @backend-specialist implements right away
-- **Security concerns?** → @security-specialist reviews in parallel
-- **Performance critical?** → @performance-specialist optimizes later
-- **DevOps/deployment?** → @devops-specialist sets up CI/CD
-- **Testing required?** → @qa-specialist writes tests after code exists
+## Available Agents (use their IDs)
+- **frontend**: Elena Rodriguez - UI components, React/Vue/Angular
+- **backend**: Miguel Torres - APIs, databases, server logic
+- **devops**: Laura Sánchez - CI/CD, Docker, Kubernetes
+- **security**: Roberto García - Security audits, vulnerabilities
+- **performance**: Ana Martínez - Performance optimization
+- **qa**: David López - Testing, quality assurance
+- **seo**: Carmen Ruiz - SEO optimization
+- **ux**: Pablo Fernández - UX design, usability
+- **data**: Isabel Moreno - Data architecture, analytics
+- **ai**: Francisco Silva - AI/ML integration
 
-## CRITICAL RULES FOR ACTION-ORIENTED WORK
-1. **PREFER CODING OVER PLANNING** - Specialists should write code, not just plans
-2. **ITERATE, DON'T PERFECT** - Working v1 > perfect design that's never built
-3. **PARALLEL WORK** - Multiple specialists can code simultaneously
-4. **MINIMIZE MEETINGS** - Each agent works autonomously with clear goals
-5. **DELIVER INCREMENTALLY** - Small working features > big unreleased projects
+## How to Schedule Agents
+Use the **schedule_agents** tool with a list of agent IDs:
+```
+schedule_agents("frontend, backend")
+# Next iteration: frontend and backend will execute in parallel
 
-## Output Format - BRIEF & ACTIONABLE
-Provide concise, action-focused output:
-- **Task**: One-line summary of what to build
-- **Agents**: Which specialists need to CODE (not just review)
-- **Actions**: Specific coding tasks for each agent
-- **Files**: Which files each agent will create/modify
-- **Done**: What defines completion (working code)
+schedule_agents("qa")
+# Next iteration: only QA will run
 
-NO LONG ESSAYS. NO OVER-ANALYSIS. FOCUS ON GETTING CODE WRITTEN.
+schedule_agents("")
+# No more agents - task is complete, will go to observer
+```
 
-Be strategic, pragmatic, and results-driven. The goal is WORKING SOFTWARE.
+## Iteration Strategy
+**Iteration 1** (your first call):
+- Schedule agents who can START coding immediately
+- Example: frontend + backend if both can work in parallel
+
+**Iteration 2+** (after agents finish):
+- Review what was created (check completed_agents, agent_results)
+- Schedule next wave of agents
+- Example: QA after backend/frontend, DevOps for deployment
+
+**Final iteration**:
+- When all work is done, schedule NO agents (empty string)
+- Observer will analyze and close the workflow
+
+## Output Format - COORDINATION DECISIONS
+```
+## Iteration Summary
+- Completed: [list agents that finished]
+- Status: [brief progress update]
+
+## Next Agents
+[Use schedule_agents tool with agent IDs]
+
+## Reasoning
+[Why these agents? What will they do?]
+```
+
+FOCUS: Make fast decisions, keep agents working, ship code.
 """
     
     def _create_custom_tools(self) -> List[Tool]:
         """Create architecture-specific tools"""
         return [
+            Tool(
+                name="schedule_agents",
+                func=self._schedule_agents,
+                description=(
+                    "Schedule which agents to execute in the next iteration. "
+                    "Input: comma-separated agent IDs (e.g., 'frontend, backend, qa') "
+                    "or empty string '' if task is complete"
+                )
+            ),
             Tool(
                 name="analyze_codebase_structure",
                 func=self._analyze_structure,
@@ -106,6 +140,49 @@ Be strategic, pragmatic, and results-driven. The goal is WORKING SOFTWARE.
                 description="Suggest architecture pattern. Input: requirements description"
             )
         ]
+    
+    def _schedule_agents(self, agent_ids: str) -> str:
+        """
+        Schedule agents for next iteration
+        
+        This tool sets state['next_agents'] which the workflow router reads.
+        The architect uses this to dynamically control which agents execute next.
+        
+        Args:
+            agent_ids: Comma-separated agent IDs (e.g., "frontend, backend")
+                      or empty string if task is complete
+        
+        Returns:
+            Confirmation message
+        """
+        if not agent_ids or agent_ids.strip() == "":
+            # Task complete - no more agents to schedule
+            # Note: This will be picked up by the agent execution context
+            self._scheduled_agents = []
+            return "✅ Task marked as complete. No more agents scheduled. Workflow will move to Observer for final analysis."
+        
+        # Parse agent IDs
+        agents = [a.strip() for a in agent_ids.split(',') if a.strip()]
+        
+        # Store for the execution context to pick up
+        self._scheduled_agents = agents
+        
+        agent_names = {
+            'frontend': 'Frontend Specialist',
+            'backend': 'Backend Specialist',
+            'devops': 'DevOps Specialist',
+            'security': 'Security Specialist',
+            'performance': 'Performance Specialist',
+            'qa': 'QA Specialist',
+            'seo': 'SEO Specialist',
+            'ux': 'UX Specialist',
+            'data': 'Data Specialist',
+            'ai': 'AI Specialist'
+        }
+        
+        scheduled_names = [agent_names.get(a, a) for a in agents]
+        
+        return f"✅ Scheduled for next iteration: {', '.join(scheduled_names)} ({len(agents)} agents)"
     
     def _analyze_structure(self, project_path: str) -> str:
         """Analyze codebase structure"""
@@ -229,3 +306,26 @@ Recommended: Modular Monolith
 - Can evolve to microservices later
 - Good for most projects
 """
+    
+    async def execute(self, state):
+        """
+        Override execute to inject scheduled agents into state
+        
+        After the architect runs, we need to update state['next_agents']
+        with the agents that were scheduled via the schedule_agents tool
+        """
+        # Initialize scheduled agents list
+        self._scheduled_agents = []
+        
+        # Call parent execute (runs the agent)
+        state = await super().execute(state)
+        
+        # Inject scheduled agents into state
+        if hasattr(self, '_scheduled_agents'):
+            state['next_agents'] = self._scheduled_agents
+            
+            # Mark task as complete if no agents scheduled
+            if not self._scheduled_agents:
+                state['task_complete'] = True
+        
+        return state
