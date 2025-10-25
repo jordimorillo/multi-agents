@@ -332,6 +332,50 @@ class GitHubClient:
             logger.error(f"❌ Failed to merge PR: {e}")
             raise
     
+    def is_pull_request_merged(self, pr_number: int) -> bool:
+        """
+        Check if a pull request has been merged
+        
+        Args:
+            pr_number: PR number
+        
+        Returns:
+            True if merged, False otherwise
+        """
+        try:
+            pr = self.repo.get_pull(pr_number)
+            return pr.is_merged()
+        except Exception as e:
+            logger.error(f"❌ Failed to check PR merge status: {e}")
+            return False
+    
+    def get_pull_request_state(self, pr_number: int) -> Dict[str, Any]:
+        """
+        Get detailed state of a pull request
+        
+        Args:
+            pr_number: PR number
+        
+        Returns:
+            Dict with PR state info (merged, closed, open, mergeable, etc.)
+        """
+        try:
+            pr = self.repo.get_pull(pr_number)
+            return {
+                "number": pr.number,
+                "state": pr.state,  # "open", "closed"
+                "merged": pr.is_merged(),
+                "mergeable": pr.mergeable,
+                "mergeable_state": pr.mergeable_state,
+                "draft": pr.draft,
+                "html_url": pr.html_url,
+                "head_branch": pr.head.ref,
+                "base_branch": pr.base.ref
+            }
+        except Exception as e:
+            logger.error(f"❌ Failed to get PR state: {e}")
+            return {}
+    
     def delete_branch(self, branch_name: str):
         """
         Delete a branch

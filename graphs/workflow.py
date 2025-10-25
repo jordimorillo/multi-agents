@@ -107,6 +107,8 @@ class MultiAgentWorkflow:
         workflow.add_node("data", self.data_agent.execute)
         workflow.add_node("ai", self.ai_agent.execute)
         workflow.add_node("observer", self.observer_agent.execute)
+        workflow.add_node("create_pr", self._create_pr_node)  # Create PR with changes
+        workflow.add_node("await_merge", self._await_merge_node)  # Wait for user to merge
         
         # Initial flow
         workflow.set_entry_point("start")
@@ -138,8 +140,21 @@ class MultiAgentWorkflow:
                       "qa", "seo", "ux", "data", "ai"]:
             workflow.add_edge(agent, "router")
         
-        # Observer ends the workflow (final analysis)
-        workflow.add_edge("observer", END)
+        # Observer → Create PR (if GitHub enabled) or END
+        workflow.add_conditional_edges(
+            "observer",
+            self._should_create_pr,
+            {
+                "create_pr": "create_pr",
+                "end": END
+            }
+        )
+        
+        # Create PR → Await Merge
+        workflow.add_edge("create_pr", "await_merge")
+        
+        # Await Merge checks if PR is merged, then END
+        workflow.add_edge("await_merge", END)
         
         # Compile
         self.graph = workflow.compile()
@@ -222,6 +237,296 @@ class MultiAgentWorkflow:
             print()
         
         return state
+    
+    async def _create_pr_node(self, state: AgentState) -> AgentState:
+        """
+        Create a Pull Request with all changes made by agents
+        
+        This node:
+        - Collects all file changes from agent results
+        - Creates a feature branch
+        - Commits all changes
+        - Creates a PR with detailed description
+        - Stores PR info in state for tracking
+        """
+        print("\n" + "=" * 80)
+        print("🔀 CREANDO PULL REQUEST")
+        print("=" * 80)
+        
+        # Check if GitHub is configured
+        if not self.config.get('github_token') or not self.config.get('github_repo'):
+            print("⚠️  GitHub no configurado - saltando creación de PR")
+            return state
+        
+        # Import GitHub client
+        from integrations.github.client import GitHubClient
+        
+        try:
+            # Initialize GitHub client
+            github = GitHubClient(
+                token=self.config['github_token'],
+                repo=self.config['github_repo']
+            )
+            
+            # Collect all files modified/created by agents
+            all_files_created = []
+            all_files_modified = []
+            
+            for agent_id, result in state.get('agent_results', {}).items():
+                if isinstance(result, dict):
+                    all_files_created.extend(result.get('files_created', []))
+                    all_files_modified.extend(result.get('files_modified', []))
+            
+            # Remove duplicates
+            all_files_created = list(set(all_files_created))
+            all_files_modified = list(set(all_files_modified))
+            
+            total_files = len(all_files_created) + len(all_files_modified)
+            
+            if total_files == 0:
+                print("ℹ️  No hay archivos modificados - no se crea PR")
+                return state
+            
+            print(f"📁 Archivos a incluir en PR:")
+            print(f"   • Creados: {len(all_files_created)}")
+            print(f"   • Modificados: {len(all_files_modified)}")
+            print()
+            
+            # Create branch name
+            task_id = state.get('task_id', 'task')
+            branch_name = f"multi-agent/{task_id}"
+            
+            print(f"🌿 Creando rama: {branch_name}")
+            
+            # Create branch
+            base_branch = self.config.get('github_base_branch', 'main')
+            github.create_branch(branch_name, from_branch=base_branch)
+            
+            # Prepare files to commit
+            from integrations.github.client import FileChange
+            file_changes = []
+            
+            for file_path in all_files_created + all_files_modified:
+                # Read file content from project
+                full_path = os.path.join(state['project_path'], file_path)
+                if os.path.exists(full_path):
+                    with open(full_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    
+                    file_changes.append(FileChange(
+                        path=file_path,
+                        content=content,
+                        commit_message=f"Update {file_path}"
+                    ))
+            
+            if not file_changes:
+                print("⚠️  No se pudieron leer los archivos - no se crea PR")
+                return state
+            
+            print(f"📝 Commiteando {len(file_changes)} archivos...")
+            
+            # Commit all files
+            commit_sha = github.commit_multiple_files(
+                branch=branch_name,
+                files=file_changes,
+                commit_message=f"feat: {state.get('task_title', 'Multi-agent changes')}"
+            )
+            
+            print(f"✅ Commit creado: {commit_sha[:7]}")
+            
+            # Create PR description
+            pr_body = f"""## 🤖 Multi-Agent System Changes
+
+**Tarea**: {state.get('task_description', 'No description')}
+
+### 📊 Resumen
+
+"""
+            
+            # Add agent summaries
+            for agent_id, result in state.get('agent_results', {}).items():
+                if isinstance(result, dict) and result.get('summary'):
+                    agent_name = result.get('agent_name', agent_id)
+                    pr_body += f"\n**{agent_name}**:\n{result['summary']}\n"
+            
+            pr_body += f"""
+### 📁 Archivos Modificados
+
+- **Creados**: {len(all_files_created)}
+- **Modificados**: {len(all_files_modified)}
+
+### ⚠️ Acción Requerida
+
+**Por favor revisa los cambios y mergea manualmente cuando estés listo.**
+
+El sistema esperará a que la PR sea mergeada antes de marcar la tarea como completada.
+"""
+            
+            print(f"🔀 Creando Pull Request...")
+            
+            # Create PR
+            pr = github.create_pull_request(
+                head=branch_name,
+                base=base_branch,
+                title=f"🤖 {state.get('task_title', 'Multi-agent changes')}",
+                body=pr_body,
+                draft=False
+            )
+            
+            print()
+            print("=" * 80)
+            print("✅ PULL REQUEST CREADA")
+            print("=" * 80)
+            print(f"🔗 URL: {pr.html_url}")
+            print(f"🌿 Rama: {branch_name}")
+            print(f"📝 PR #{pr.number}")
+            print("=" * 80)
+            print()
+            
+            # Store PR info in state
+            state['pending_pr_merge'] = {
+                'number': pr.number,
+                'url': pr.html_url,
+                'branch': branch_name,
+                'created_at': datetime.now().isoformat()
+            }
+            
+            # Add to PR list
+            state['github_prs'].append({
+                'number': str(pr.number),
+                'url': pr.html_url,
+                'branch': branch_name
+            })
+            
+            state['messages'].append(f"✅ PR #{pr.number} creada: {pr.html_url}")
+            
+            return state
+            
+        except Exception as e:
+            logger.error(f"❌ Error creando PR: {e}", exc_info=True)
+            print(f"❌ Error creando PR: {str(e)}")
+            return state
+    
+    async def _await_merge_node(self, state: AgentState) -> AgentState:
+        """
+        Wait for user to merge the PR manually
+        
+        This node:
+        - Checks if there's a pending PR
+        - Asks user to review and merge
+        - Polls for PR merge status
+        - Marks task as complete only after merge
+        """
+        print("\n" + "=" * 80)
+        print("⏳ ESPERANDO MERGE DE PR")
+        print("=" * 80)
+        
+        pending_pr = state.get('pending_pr_merge')
+        
+        if not pending_pr:
+            print("ℹ️  No hay PR pendiente")
+            state['task_complete'] = True
+            return state
+        
+        pr_number = pending_pr['number']
+        pr_url = pending_pr['url']
+        
+        print(f"\n🔗 Pull Request: {pr_url}")
+        print(f"📝 PR #{pr_number}")
+        print()
+        print("Por favor:")
+        print("  1️⃣  Revisa los cambios en GitHub")
+        print("  2️⃣  Si todo está correcto, mergea la PR")
+        print("  3️⃣  El sistema verificará el merge y marcará como Done")
+        print()
+        
+        # Import GitHub client
+        from integrations.github.client import GitHubClient
+        
+        try:
+            github = GitHubClient(
+                token=self.config['github_token'],
+                repo=self.config['github_repo']
+            )
+            
+            # Check current PR state
+            pr_state = github.get_pull_request_state(pr_number)
+            
+            if pr_state.get('merged'):
+                print("=" * 80)
+                print("✅ PR YA ESTÁ MERGEADA")
+                print("=" * 80)
+                print("🎉 Tarea completada exitosamente")
+                print()
+                
+                state['task_complete'] = True
+                state['pending_pr_merge'] = None
+                state['messages'].append(f"✅ PR #{pr_number} mergeada exitosamente")
+                
+                return state
+            
+            # PR not merged yet - ask user
+            print("⏳ PR aún no está mergeada")
+            print()
+            
+            while True:
+                response = input("¿Deseas que verifique si ya la mergeaste? (s/n): ").strip().lower()
+                
+                if response in ['n', 'no']:
+                    print()
+                    print("ℹ️  Puedes verificar el estado más tarde con:")
+                    print(f"     agent resume {state['task_id']}")
+                    print()
+                    state['messages'].append("⏳ Esperando merge de PR por el usuario")
+                    break
+                
+                elif response in ['s', 'si', 'sí', 'y', 'yes']:
+                    print()
+                    print("🔍 Verificando estado de la PR...")
+                    
+                    pr_state = github.get_pull_request_state(pr_number)
+                    
+                    if pr_state.get('merged'):
+                        print()
+                        print("=" * 80)
+                        print("✅ PR MERGEADA EXITOSAMENTE")
+                        print("=" * 80)
+                        print("🎉 Tarea completada")
+                        print()
+                        
+                        state['task_complete'] = True
+                        state['pending_pr_merge'] = None
+                        state['messages'].append(f"✅ PR #{pr_number} mergeada exitosamente")
+                        
+                        return state
+                    else:
+                        print()
+                        print("⏳ PR aún no está mergeada")
+                        print(f"   Estado: {pr_state.get('state', 'unknown')}")
+                        print()
+                        continue
+                else:
+                    print("Por favor responde 's' o 'n'")
+                    continue
+            
+            return state
+            
+        except Exception as e:
+            logger.error(f"❌ Error verificando PR: {e}", exc_info=True)
+            print(f"❌ Error verificando PR: {str(e)}")
+            print("ℹ️  Puedes verificar manualmente en GitHub")
+            return state
+    
+    def _should_create_pr(self, state: AgentState) -> str:
+        """
+        Decide if we should create a PR based on configuration
+        
+        Returns:
+            "create_pr" if GitHub is configured, "end" otherwise
+        """
+        if self.config.get('github_token') and self.config.get('github_repo'):
+            return "create_pr"
+        return "end"
     
     # ═══════════════════════════════════════════════════════════
     # CONDITIONAL ROUTING FUNCTIONS

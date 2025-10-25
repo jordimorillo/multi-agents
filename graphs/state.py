@@ -41,6 +41,7 @@ class AgentState(TypedDict):
     github_base_branch: str
     github_agent_branches: Dict[str, str]  # agent_id -> branch_name
     github_prs: Annotated[List[Dict[str, str]], add]  # List of PRs created
+    pending_pr_merge: Dict[str, Any]  # PR waiting for user merge: {number, url, branch}
     
     # ═══════════════════════════════════════════════════════════
     # AGENT COORDINATION
@@ -72,6 +73,9 @@ class AgentState(TypedDict):
     requires_devops: bool  # Si necesita deployment
     requires_testing: bool  # Si necesita QA
     next_agent: str  # Next agent to route to (for dynamic routing)
+    task_complete: bool  # Task marked as complete by Architect
+    iteration: int  # Current iteration number
+    next_agents: List[str]  # Agents to execute in next iteration
 
 
 class AgentResult(TypedDict):
@@ -151,6 +155,7 @@ def create_initial_state(
         github_base_branch='main',
         github_agent_branches={},
         github_prs=[],
+        pending_pr_merge=None,  # PR waiting for user merge
         
         # Coordination
         agent_results={},
@@ -173,7 +178,10 @@ def create_initial_state(
         needs_human_review=False,
         requires_devops=False,
         requires_testing=True,
-        next_agent=''
+        next_agent='',
+        task_complete=False,
+        iteration=0,
+        next_agents=[]
     )
 
 
