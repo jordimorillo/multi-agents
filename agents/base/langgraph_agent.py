@@ -6,6 +6,7 @@ Base class for all specialized agents using LangChain
 import os
 import json
 import logging
+import asyncio
 from typing import List, Dict, Any, Optional
 from abc import ABC, abstractmethod
 
@@ -320,14 +321,8 @@ class LangChainAgentBase(ABC):
             # Build input from state
             input_text = self._build_input(state)
             
-            # Execute with token tracking
-            with get_openai_callback() as cb:
-                result = await self.executor.ainvoke({
-                    "input": input_text
-                })
-            
-            # Parse output
-            agent_result = self._parse_output(result['output'], cb)
+            # Execute with token tracking AND retry on rate limits
+            agent_result = await self._execute_with_retry(input_text)
             
             # Update Linear if needed
             if state.get('linear_sub_issues', {}).get(self.agent_id):
@@ -346,8 +341,8 @@ class LangChainAgentBase(ABC):
             state['agent_results'][self.agent_id] = agent_result
             state['completed_agents'].append(self.agent_id)
             state['messages'].append(f"✅ {self.name} completed")
-            state['total_tokens_used'] += cb.total_tokens
-            state['total_cost_usd'] += cb.total_cost
+            state['total_tokens_used'] += agent_result.get('tokens_used', 0)
+            state['total_cost_usd'] += agent_result.get('cost_usd', 0.0)
             
             logger.info(f"✅ {self.name} completed successfully")
             
@@ -360,6 +355,76 @@ class LangChainAgentBase(ABC):
             state['messages'].append(f"❌ {self.name} failed: {str(e)}")
             
             return state
+    
+    async def _execute_with_retry(
+        self, 
+        input_text: str,
+        max_retries: int = 5,
+        initial_delay: float = 2.0
+    ) -> AgentResult:
+        """
+        Execute agent with exponential backoff retry for rate limits
+        
+        Args:
+            input_text: Input to the agent
+            max_retries: Maximum number of retry attempts
+            initial_delay: Initial delay in seconds (doubles each retry)
+        
+        Returns:
+            AgentResult with execution details
+        """
+        from openai import RateLimitError
+        
+        delay = initial_delay
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                # Execute with token tracking
+                with get_openai_callback() as cb:
+                    result = await self.executor.ainvoke({
+                        "input": input_text
+                    })
+                
+                # Parse and return result
+                agent_result = self._parse_output(result['output'], cb)
+                return agent_result
+                
+            except RateLimitError as e:
+                last_error = e
+                
+                # Parse wait time from error message if available
+                error_msg = str(e)
+                wait_time = delay
+                
+                if "Please try again in" in error_msg:
+                    try:
+                        # Extract wait time from message like "Please try again in 1.626s"
+                        import re
+                        match = re.search(r'try again in ([\d.]+)s', error_msg)
+                        if match:
+                            wait_time = float(match.group(1)) + 1  # Add 1s buffer
+                    except:
+                        pass
+                
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        f"⏳ {self.name} hit rate limit (attempt {attempt + 1}/{max_retries}). "
+                        f"Waiting {wait_time:.1f}s before retry..."
+                    )
+                    await asyncio.sleep(wait_time)
+                    delay *= 2  # Exponential backoff
+                else:
+                    logger.error(f"❌ {self.name} exceeded max retries for rate limit")
+                    raise last_error
+            
+            except Exception as e:
+                # Non-rate-limit errors: fail immediately
+                logger.error(f"❌ {self.name} execution error: {e}")
+                raise
+        
+        # Should not reach here
+        raise last_error if last_error else Exception("Unknown error in retry loop")
     
     def _build_input(self, state: AgentState) -> str:
         """Build input text from state"""
