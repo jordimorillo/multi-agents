@@ -10,9 +10,43 @@ from dotenv import load_dotenv
 
 # Cargar variables de entorno desde el directorio del script
 # (no desde el directorio actual de ejecución)
+# SIEMPRE sobrescribir con el .env del proyecto (override=True)
 script_dir = Path(__file__).parent.absolute()
 dotenv_path = script_dir / '.env'
-load_dotenv(dotenv_path=dotenv_path)
+load_dotenv(dotenv_path=dotenv_path, override=True)
+
+# Mostrar fuente de OPENAI_API_KEY (sin exponer la clave completa)
+def _mask_key(key: str | None) -> str | None:
+    if not key:
+        return None
+    try:
+        # show a short prefix and suffix only
+        if len(key) <= 12:
+            return key[:4] + "..."
+        return f"{key[:6]}...{key[-4:]}"
+    except Exception:
+        return None
+
+openai_key_pre = os.getenv("OPENAI_API_KEY")
+env_key_in_file = None
+try:
+    if dotenv_path.exists():
+        for line in dotenv_path.read_text().splitlines():
+            if line.strip().startswith("OPENAI_API_KEY="):
+                env_key_in_file = line.split("=", 1)[1].strip()
+                break
+except Exception:
+    env_key_in_file = None
+
+if openai_key_pre:
+    if env_key_in_file and env_key_in_file == openai_key_pre:
+        source = f".env file at {dotenv_path}"
+    else:
+        source = "environment variable (exported)"
+    masked = _mask_key(openai_key_pre)
+    print(f"🔒 OPENAI_API_KEY loaded from {source}: {masked}")
+else:
+    print("❌ OPENAI_API_KEY not found in environment or project .env")
 
 # Importar componentes necesarios
 from graphs.workflow import MultiAgentWorkflow
