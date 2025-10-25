@@ -60,8 +60,12 @@ async def execute_task(task_description: str):
     Args:
         task_description: Descripción de la tarea a realizar
     """
-    print("🚀 Iniciando Sistema Multi-Agente...")
-    print(f"📝 Tarea: {task_description}\n")
+    print("\n" + "=" * 80)
+    print("🤖 SISTEMA MULTI-AGENTE DE DESARROLLO")
+    print("=" * 80)
+    print(f"\n� Tarea a realizar:")
+    print(f"   {task_description}")
+    print()
     
     # Verificar API keys
     openai_key = os.getenv("OPENAI_API_KEY")
@@ -74,11 +78,34 @@ async def execute_task(task_description: str):
     github_repo = os.getenv("GITHUB_REPO", "")
     linear_api_key = os.getenv("LINEAR_API_KEY", "")
     
-    if not github_repo or github_repo == "owner/repo-name":
-        print("⚠️  ADVERTENCIA: GITHUB_REPO no configurado en .env")
-        print("   Continuando sin integración GitHub...")
+    # Mostrar contexto del proyecto
+    project_path = os.getcwd()
+    print(f"📂 Proyecto: {project_path}")
+    
+    if github_repo and github_repo != "owner/repo-name":
+        print(f"🔗 Repositorio: {github_repo}")
+    else:
+        print("⚠️  Sin integración GitHub (opcional)")
         github_repo = None
         github_token = None
+    
+    print()
+    
+    # Confirmación del usuario
+    print("El sistema trabajará de forma iterativa:")
+    print("  1️⃣  El Arquitecto analizará la tarea")
+    print("  2️⃣  Programará agentes especializados según necesidad")
+    print("  3️⃣  Los agentes escribirán código real")
+    print("  4️⃣  El Arquitecto revisará progreso y decidirá siguientes pasos")
+    print("  5️⃣  Ciclo continúa hasta completar la tarea")
+    print()
+    
+    response = input("¿Continuar? (s/n): ").strip().lower()
+    if response not in ['s', 'si', 'sí', 'y', 'yes']:
+        print("❌ Operación cancelada por el usuario")
+        sys.exit(0)
+    
+    print("\n🚀 Iniciando ejecución multi-agente...\n")
     
     # Configuración del workflow
     config = {
@@ -91,13 +118,15 @@ async def execute_task(task_description: str):
     }
     
     print("=" * 80)
-    print("🤖 AGENTES ACTIVADOS:")
+    print("🎯 AGENTES DISPONIBLES:")
     print("=" * 80)
-    print("  📐 @fullstack-architect - Coordinador y Arquitecto")
-    print("  🔒 @security-specialist - Revisor de Seguridad")
-    print("  💻 @frontend-specialist - Desarrollo Frontend")
-    print("  🔧 @backend-specialist - Desarrollo Backend")
-    print("  ✅ @qa-specialist - Control de Calidad")
+    print("  📐 Arquitecto       - Coordina y decide qué hacer")
+    print("  � Frontend         - Componentes, UI, estilos")
+    print("  🔧 Backend          - APIs, base de datos, lógica")
+    print("  � DevOps           - Deploy, CI/CD, infraestructura")
+    print("  � Seguridad        - Auditorías y vulnerabilidades")
+    print("  ⚡ Performance      - Optimizaciones")
+    print("  ✅ QA               - Tests y calidad")
     print("  🔍 @observer-optimizer - Análisis y Optimización")
     print("=" * 80)
     print()

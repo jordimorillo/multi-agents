@@ -159,10 +159,14 @@ class MultiAgentWorkflow:
         - Creates sub-issues for each agent
         - Initializes workflow metadata
         """
-        logger.info("🚀 Starting multi-agent workflow...")
+        print("\n" + "=" * 80)
+        print("🎬 INICIANDO ANÁLISIS")
+        print("=" * 80)
+        print(f"📝 Tarea: {state['task_description']}")
+        print()
         
-        state['messages'].append("📋 Workflow initialized with 12 specialized agents")
-        state['messages'].append(f"🎯 Task: {state['task_description'][:100]}...")
+        state['messages'].append("📋 Sistema multi-agente inicializado")
+        state['messages'].append(f"🎯 Tarea: {state['task_description'][:100]}...")
         state['iteration'] = 0
         state['next_agents'] = []  # Agents to execute in next iteration
         
@@ -176,11 +180,15 @@ class MultiAgentWorkflow:
         to execute in this iteration
         """
         state['iteration'] = state.get('iteration', 0) + 1
-        logger.info(f"🔀 Router: Iteration {state['iteration']}")
+        
+        print("\n" + "=" * 80)
+        print(f"🔄 ITERACIÓN {state['iteration']}")
+        print("=" * 80)
         
         # Check if task is complete
         if state.get('task_complete'):
-            logger.info("✅ Task marked as complete by Architect")
+            print("✅ Arquitecto ha marcado la tarea como COMPLETADA")
+            print("📊 Procediendo al análisis final...")
             state['next_agents'] = ['observer']  # Final step
             return state
         
@@ -189,10 +197,29 @@ class MultiAgentWorkflow:
         
         if not next_agents:
             # No more agents to execute, go to observer
-            logger.info("📊 No more agents scheduled, moving to Observer")
+            print("📊 No hay más agentes programados")
+            print("🔍 Moviendo al Observer para análisis final...")
             state['next_agents'] = ['observer']
         else:
-            logger.info(f"🎯 Next agents: {', '.join(next_agents)}")
+            # Map agent IDs to friendly names
+            agent_names = {
+                'frontend': '💻 Frontend',
+                'backend': '🔧 Backend',
+                'devops': '🚀 DevOps',
+                'security': '🔒 Seguridad',
+                'performance': '⚡ Performance',
+                'qa': '✅ QA',
+                'seo': '📈 SEO',
+                'ux': '🎨 UX',
+                'data': '📊 Datos',
+                'ai': '🤖 IA'
+            }
+            
+            agent_list = [agent_names.get(a, a) for a in next_agents]
+            print(f"🎯 Agentes programados para esta iteración:")
+            for agent in agent_list:
+                print(f"   {agent}")
+            print()
         
         return state
     

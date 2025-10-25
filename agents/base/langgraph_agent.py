@@ -192,6 +192,16 @@ class LangChainAgentBase(ABC):
                 name="list_files",
                 func=self._list_files,
                 description="List files in a directory. Input: directory path"
+            ),
+            Tool(
+                name="ask_user",
+                func=self._ask_user,
+                description=(
+                    "Ask the user a question when you need clarification or have doubts. "
+                    "Use this when: decisions require user input, ambiguous requirements, "
+                    "multiple valid approaches exist, or user preference is needed. "
+                    "Input: clear, concise question in Spanish"
+                )
             )
         ]
     
@@ -239,6 +249,29 @@ class LangChainAgentBase(ABC):
             return f"File content ({len(content)} chars):\n\n{content}"
         except Exception as e:
             return f"Error reading file: {e}"
+    
+    def _ask_user(self, question: str) -> str:
+        """
+        Ask user for clarification when there's ambiguity
+        
+        Args:
+            question: Question to ask the user
+        
+        Returns:
+            User's response
+        """
+        print("\n" + "=" * 80)
+        print("❓ PREGUNTA AL USUARIO")
+        print("=" * 80)
+        print(f"\n{question}\n")
+        
+        response = input("Tu respuesta: ").strip()
+        
+        if not response:
+            response = "No response provided"
+        
+        print()
+        return f"Usuario respondió: {response}"
     
     def _write_file(self, input_json: str) -> str:
         """Write file tool (legacy - kept for compatibility)"""
@@ -315,7 +348,24 @@ class LangChainAgentBase(ABC):
         Returns:
             Updated state
         """
-        logger.info(f"🚀 {self.name} starting execution")
+        # Friendly output to user
+        role_emoji = {
+            'agent-01-fullstack-architect': '📐',
+            'agent-02-frontend-specialist': '�',
+            'agent-03-backend-specialist': '🔧',
+            'agent-04-devops-specialist': '�🚀',
+            'agent-05-security-specialist': '🔒',
+            'agent-06-performance-specialist': '⚡',
+            'agent-07-qa-specialist': '✅',
+            'agent-08-seo-specialist': '📈',
+            'agent-09-ux-specialist': '🎨',
+            'agent-10-data-specialist': '📊',
+            'agent-11-ai-specialist': '🤖',
+            'agent-12-observer-optimizer': '🔍'
+        }
+        
+        emoji = role_emoji.get(self.agent_id, '👤')
+        print(f"\n{emoji} {self.name} está trabajando...")
         
         try:
             # Build input from state
@@ -323,6 +373,9 @@ class LangChainAgentBase(ABC):
             
             # Execute with token tracking AND retry on rate limits
             agent_result = await self._execute_with_retry(input_text)
+            
+            # Show what was done to the user
+            self._print_agent_summary(agent_result)
             
             # Update Linear if needed
             if state.get('linear_sub_issues', {}).get(self.agent_id):
@@ -336,25 +389,58 @@ class LangChainAgentBase(ABC):
                 pr_info = await self._push_to_github(state, agent_result)
                 agent_result['pr_url'] = pr_info.get('url', '')
                 agent_result['branch_name'] = pr_info.get('branch', '')
+                if pr_info.get('url'):
+                    print(f"   🔗 Pull Request: {pr_info['url']}")
             
             # Update state
             state['agent_results'][self.agent_id] = agent_result
             state['completed_agents'].append(self.agent_id)
-            state['messages'].append(f"✅ {self.name} completed")
+            state['messages'].append(f"✅ {self.name} completado")
             state['total_tokens_used'] += agent_result.get('tokens_used', 0)
             state['total_cost_usd'] += agent_result.get('cost_usd', 0.0)
             
-            logger.info(f"✅ {self.name} completed successfully")
+            print(f"   ✅ Completado\n")
             
             return state
             
         except Exception as e:
             logger.error(f"❌ {self.name} failed: {e}", exc_info=True)
+            print(f"   ❌ Error: {str(e)[:100]}\n")
             
             state['failed_agents'].append(self.agent_id)
-            state['messages'].append(f"❌ {self.name} failed: {str(e)}")
+            state['messages'].append(f"❌ {self.name} falló: {str(e)}")
             
             return state
+    
+    def _print_agent_summary(self, result: AgentResult):
+        """Print friendly summary of what the agent did"""
+        summary = result.get('summary', '')
+        
+        # Files created/modified
+        files_created = result.get('files_created', [])
+        files_modified = result.get('files_modified', [])
+        
+        if files_created:
+            print(f"   📝 Archivos creados: {len(files_created)}")
+            for f in files_created[:3]:
+                print(f"      • {f}")
+            if len(files_created) > 3:
+                print(f"      ... y {len(files_created) - 3} más")
+        
+        if files_modified:
+            print(f"   ✏️  Archivos modificados: {len(files_modified)}")
+            for f in files_modified[:3]:
+                print(f"      • {f}")
+            if len(files_modified) > 3:
+                print(f"      ... y {len(files_modified) - 3} más")
+        
+        # Show brief summary if available
+        if summary and len(summary) > 10:
+            # Truncate to first 150 chars
+            short_summary = summary[:150].strip()
+            if len(summary) > 150:
+                short_summary += "..."
+            print(f"   💬 {short_summary}")
     
     async def _execute_with_retry(
         self, 
