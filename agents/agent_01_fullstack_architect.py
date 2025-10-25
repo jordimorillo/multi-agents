@@ -115,7 +115,7 @@ Use the **assign_models** tool to choose the right model for each agent:
 
 **Example usage**:
 ```json
-assign_models('{"frontend": "gpt-4o-mini", "backend": "gpt-4o", "qa": "gpt-3.5-turbo"}')
+assign_models('{{"frontend": "gpt-4o-mini", "backend": "gpt-4o", "qa": "gpt-3.5-turbo"}}')
 ```
 
 **Guidelines**:
@@ -128,36 +128,36 @@ assign_models('{"frontend": "gpt-4o-mini", "backend": "gpt-4o", "qa": "gpt-3.5-t
 
 *Task: "Add user authentication with OAuth"*
 ```json
-{
-  "security": "gpt-4o",        // Critical security implementation
-  "backend": "gpt-4o-mini",    // API endpoints, standard complexity
-  "frontend": "gpt-4o-mini"    // Login UI, moderate work
-}
+{{
+    "security": "gpt-4o",        // Critical security implementation
+    "backend": "gpt-4o-mini",    // API endpoints, standard complexity
+    "frontend": "gpt-4o-mini"    // Login UI, moderate work
+}}
 ```
 
 *Task: "Update button colors to match brand"*
 ```json
-{
-  "frontend": "gpt-3.5-turbo"  // Simple styling change
-}
+{{
+    "frontend": "gpt-3.5-turbo"  // Simple styling change
+}}
 ```
 
 *Task: "Implement translation system for website"*
 ```json
-{
-  "frontend": "gpt-4o-mini",   // I18n integration, moderate
-  "backend": "gpt-3.5-turbo"   // Simple JSON files, easy
-  "qa": "gpt-3.5-turbo"        // Basic testing
-}
+{{
+    "frontend": "gpt-4o-mini",   // I18n integration, moderate
+    "backend": "gpt-3.5-turbo",  // Simple JSON files, easy
+    "qa": "gpt-3.5-turbo"        // Basic testing
+}}
 ```
 
 *Task: "Migrate database schema with zero downtime"*
 ```json
-{
-  "backend": "gpt-4o",         // Complex migration strategy
-  "devops": "gpt-4o",          // Critical deployment process
-  "qa": "gpt-4o-mini"          // Thorough testing needed
-}
+{{
+    "backend": "gpt-4o",         // Complex migration strategy
+    "devops": "gpt-4o",          // Critical deployment process
+    "qa": "gpt-4o-mini"          // Thorough testing needed
+}}
 ```
 
 ## Iteration Strategy
