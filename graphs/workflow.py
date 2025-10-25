@@ -228,10 +228,12 @@ class MultiAgentWorkflow:
         )
         
         # Config for checkpointing
+        # SIN LÍMITE de recursión - el workflow debe poder iterar libremente
         config = {
             "configurable": {
                 "thread_id": initial_state["task_id"]
-            }
+            },
+            "recursion_limit": 1000  # Límite muy alto para permitir iteraciones extensas
         }
         
         # Execute graph
@@ -259,7 +261,10 @@ class MultiAgentWorkflow:
         """
         logger.info(f"🔄 Resuming workflow: {task_id}")
         
-        config = {"configurable": {"thread_id": task_id}}
+        config = {
+            "configurable": {"thread_id": task_id},
+            "recursion_limit": 1000  # Límite muy alto para permitir iteraciones extensas
+        }
         
         # Resume from checkpoint
         final_state = await self.graph.ainvoke(None, config)
