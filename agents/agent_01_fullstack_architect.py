@@ -4,10 +4,13 @@ Carlos Mendoza - 35 years experience in software architecture
 """
 
 import os
+import logging
 from typing import List
 from langchain.tools import Tool
 
 from agents.base.langgraph_agent import LangChainAgentBase
+
+logger = logging.getLogger(__name__)
 
 
 class FullStackArchitectAgent(LangChainAgentBase):
@@ -90,14 +93,83 @@ schedule_agents("")
 # No more agents - task is complete, will go to observer
 ```
 
+## How to Assign Models (OPTIMIZE COSTS!)
+Use the **assign_models** tool to choose the right model for each agent:
+
+**Available Models**:
+1. **gpt-4o** ($$$) - Most capable
+   - Use for: Complex algorithms, critical security, advanced architecture decisions
+   - Example: Security audits, complex refactoring, database schema design
+
+2. **gpt-4o-mini** ($$) - Balanced (RECOMMENDED for most tasks)
+   - Use for: Most development work, API implementation, UI components
+   - Example: Frontend components, backend APIs, DevOps configs
+
+3. **gpt-3.5-turbo** ($) - Fast and cheap
+   - Use for: Simple CRUD, repetitive tasks, documentation, minor updates
+   - Example: Simple styling, config updates, basic tests
+
+**When to assign models**:
+- **First iteration**: Assign models for ALL scheduled agents
+- **Subsequent iterations**: Only reassign if complexity changes
+
+**Example usage**:
+```json
+assign_models('{"frontend": "gpt-4o-mini", "backend": "gpt-4o", "qa": "gpt-3.5-turbo"}')
+```
+
+**Guidelines**:
+- Default to gpt-4o-mini unless there's a specific reason
+- Use gpt-4o only for genuinely complex/critical tasks
+- Use gpt-3.5-turbo for simple, straightforward work
+- Consider user's budget - don't waste money unnecessarily
+
+**Decision Examples**:
+
+*Task: "Add user authentication with OAuth"*
+```json
+{
+  "security": "gpt-4o",        // Critical security implementation
+  "backend": "gpt-4o-mini",    // API endpoints, standard complexity
+  "frontend": "gpt-4o-mini"    // Login UI, moderate work
+}
+```
+
+*Task: "Update button colors to match brand"*
+```json
+{
+  "frontend": "gpt-3.5-turbo"  // Simple styling change
+}
+```
+
+*Task: "Implement translation system for website"*
+```json
+{
+  "frontend": "gpt-4o-mini",   // I18n integration, moderate
+  "backend": "gpt-3.5-turbo"   // Simple JSON files, easy
+  "qa": "gpt-3.5-turbo"        // Basic testing
+}
+```
+
+*Task: "Migrate database schema with zero downtime"*
+```json
+{
+  "backend": "gpt-4o",         // Complex migration strategy
+  "devops": "gpt-4o",          // Critical deployment process
+  "qa": "gpt-4o-mini"          // Thorough testing needed
+}
+```
+
 ## Iteration Strategy
 **Iteration 1** (your first call):
 - Schedule agents who can START coding immediately
+- ASSIGN MODELS to all scheduled agents (MANDATORY!)
 - Example: frontend + backend if both can work in parallel
 
 **Iteration 2+** (after agents finish):
 - Review what was created (check completed_agents, agent_results)
 - Schedule next wave of agents
+- ASSIGN MODELS for newly scheduled agents
 - Example: QA after backend/frontend, DevOps for deployment
 
 **Final iteration**:
@@ -121,31 +193,39 @@ FOCUS: Make fast decisions, keep agents working, ship code.
 """
     
     def _create_custom_tools(self) -> List[Tool]:
-        """Create architecture-specific tools"""
+        """Architect-specific tools"""
+        
+        # Initialize scheduled agents storage
+        self._scheduled_agents = []
+        self._assigned_models = {}  # Store model assignments
+        
         return [
             Tool(
                 name="schedule_agents",
                 func=self._schedule_agents,
                 description=(
-                    "Schedule which agents to execute in the next iteration. "
-                    "Input: comma-separated agent IDs (e.g., 'frontend, backend, qa') "
-                    "or empty string '' if task is complete"
+                    "Schedule which agents will execute in the NEXT iteration. "
+                    "Input: comma-separated agent IDs (frontend, backend, devops, security, "
+                    "performance, qa, seo, ux, data, ai) or empty string if task is complete"
                 )
             ),
             Tool(
-                name="analyze_codebase_structure",
+                name="assign_models",
+                func=self._assign_models,
+                description=(
+                    "Assign optimal OpenAI model to each agent based on task complexity. "
+                    "Input: JSON string with agent_id -> model mappings. "
+                    "Available models: "
+                    "gpt-4o (most capable, expensive, for complex tasks), "
+                    "gpt-4o-mini (balanced, good for most tasks), "
+                    "gpt-3.5-turbo (fast and cheap, for simple tasks). "
+                    "Example: '{\"frontend\": \"gpt-4o-mini\", \"backend\": \"gpt-4o\"}'"
+                )
+            ),
+            Tool(
+                name="analyze_project_structure",
                 func=self._analyze_structure,
-                description="Analyze codebase architecture. Input: project path"
-            ),
-            Tool(
-                name="check_dependencies",
-                func=self._check_dependencies,
-                description="Analyze project dependencies and tech stack. Input: project path"
-            ),
-            Tool(
-                name="estimate_complexity",
-                func=self._estimate_complexity,
-                description="Estimate task complexity and effort. Input: task description"
+                description="Analyze project directory structure. Input: project path"
             ),
             Tool(
                 name="suggest_architecture",
@@ -196,6 +276,73 @@ FOCUS: Make fast decisions, keep agents working, ship code.
         scheduled_names = [agent_names.get(a, a) for a in agents]
         
         return f"✅ Scheduled for next iteration: {', '.join(scheduled_names)} ({len(agents)} agents)"
+    
+    def _assign_models(self, model_assignments: str) -> str:
+        """
+        Assign OpenAI models to agents based on task complexity
+        
+        This allows the Architect to optimize costs and performance by:
+        - Using gpt-4o for complex, critical tasks
+        - Using gpt-4o-mini for most tasks (balanced)
+        - Using gpt-3.5-turbo for simple, repetitive tasks
+        
+        Args:
+            model_assignments: JSON string mapping agent_id -> model
+                              Example: '{"frontend": "gpt-4o-mini", "backend": "gpt-4o"}'
+        
+        Returns:
+            Confirmation message with cost estimates
+        """
+        import json
+        
+        # Available models with characteristics
+        available_models = {
+            'gpt-4o': {
+                'name': 'GPT-4o',
+                'capability': 'highest',
+                'cost': 'high',
+                'use_case': 'complex architecture, critical security, complex algorithms'
+            },
+            'gpt-4o-mini': {
+                'name': 'GPT-4o Mini', 
+                'capability': 'high',
+                'cost': 'medium',
+                'use_case': 'most development tasks, balanced performance'
+            },
+            'gpt-3.5-turbo': {
+                'name': 'GPT-3.5 Turbo',
+                'capability': 'good',
+                'cost': 'low',
+                'use_case': 'simple CRUD, repetitive tasks, documentation'
+            }
+        }
+        
+        try:
+            # Parse JSON
+            assignments = json.loads(model_assignments)
+            
+            # Validate models
+            for agent_id, model in assignments.items():
+                if model not in available_models:
+                    return f"❌ Invalid model '{model}'. Use: gpt-4o, gpt-4o-mini, or gpt-3.5-turbo"
+            
+            # Store assignments
+            self._assigned_models = assignments
+            
+            # Build response
+            response = "✅ Model assignments:\n"
+            for agent_id, model in assignments.items():
+                model_info = available_models[model]
+                response += f"   • {agent_id}: {model_info['name']} ({model_info['cost']} cost)\n"
+            
+            response += f"\nTotal agents assigned: {len(assignments)}"
+            
+            return response
+            
+        except json.JSONDecodeError:
+            return "❌ Invalid JSON format. Example: '{\"frontend\": \"gpt-4o-mini\", \"backend\": \"gpt-4o\"}'"
+        except Exception as e:
+            return f"❌ Error assigning models: {str(e)}"
     
     def _analyze_structure(self, project_path: str) -> str:
         """Analyze codebase structure"""
@@ -322,13 +469,15 @@ Recommended: Modular Monolith
     
     async def execute(self, state):
         """
-        Override execute to inject scheduled agents into state
+        Override execute to inject scheduled agents and model assignments into state
         
-        After the architect runs, we need to update state['next_agents']
-        with the agents that were scheduled via the schedule_agents tool
+        After the architect runs, we need to:
+        1. Update state['next_agents'] with scheduled agents
+        2. Update state['agent_models'] with model assignments
         """
-        # Initialize scheduled agents list
+        # Initialize storage
         self._scheduled_agents = []
+        self._assigned_models = {}
         
         # Call parent execute (runs the agent)
         state = await super().execute(state)
@@ -340,5 +489,13 @@ Recommended: Modular Monolith
             # Mark task as complete if no agents scheduled
             if not self._scheduled_agents:
                 state['task_complete'] = True
+        
+        # Inject model assignments into state
+        if hasattr(self, '_assigned_models') and self._assigned_models:
+            # Update agent_models in state
+            for agent_id, model in self._assigned_models.items():
+                state['agent_models'][agent_id] = model
+            
+            logger.info(f"📋 Model assignments: {self._assigned_models}")
         
         return state

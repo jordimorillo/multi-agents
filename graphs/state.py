@@ -50,6 +50,7 @@ class AgentState(TypedDict):
     completed_agents: Annotated[List[str], add]  # List of completed agent IDs
     failed_agents: Annotated[List[str], add]  # List of failed agent IDs
     blocked_agents: List[str]  # Agents waiting for dependencies
+    agent_models: Dict[str, str]  # agent_id -> model name (assigned by Architect)
     
     # ═══════════════════════════════════════════════════════════
     # EXECUTION METADATA
@@ -162,6 +163,7 @@ def create_initial_state(
         completed_agents=[],
         failed_agents=[],
         blocked_agents=[],
+        agent_models={},  # Architect assigns models dynamically
         
         # Metadata
         started_at=now,

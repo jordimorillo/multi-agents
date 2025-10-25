@@ -365,7 +365,41 @@ class LangChainAgentBase(ABC):
         }
         
         emoji = role_emoji.get(self.agent_id, '👤')
-        print(f"\n{emoji} {self.name} está trabajando...")
+        
+        # Check if Architect assigned a specific model for this agent
+        agent_models = state.get('agent_models', {})
+        assigned_model = None
+        
+        # Try to find model assignment with different ID formats
+        # The Architect might use short IDs like "frontend", "backend", etc.
+        possible_keys = [
+            self.agent_id,  # Full ID: agent-02-frontend-specialist
+            'frontend' if 'frontend' in self.agent_id else None,
+            'backend' if 'backend' in self.agent_id else None,
+            'devops' if 'devops' in self.agent_id else None,
+            'security' if 'security' in self.agent_id else None,
+            'performance' if 'performance' in self.agent_id else None,
+            'qa' if 'qa' in self.agent_id else None,
+            'seo' if 'seo' in self.agent_id else None,
+            'ux' if 'ux' in self.agent_id else None,
+            'data' if 'data' in self.agent_id else None,
+            'ai' if 'ai' in self.agent_id and 'agent-11' in self.agent_id else None,
+        ]
+        
+        for key in possible_keys:
+            if key and key in agent_models:
+                assigned_model = agent_models[key]
+                break
+        
+        # If model was assigned by Architect, switch to it temporarily
+        original_model = None
+        if assigned_model and assigned_model != self.llm.model_name:
+            original_model = self.llm.model_name
+            self.llm.model_name = assigned_model
+            logger.info(f"🔄 {self.name} using assigned model: {assigned_model}")
+            print(f"\n{emoji} {self.name} está trabajando... (modelo: {assigned_model})")
+        else:
+            print(f"\n{emoji} {self.name} está trabajando...")
         
         try:
             # Build input from state
@@ -401,11 +435,19 @@ class LangChainAgentBase(ABC):
             
             print(f"   ✅ Completado\n")
             
+            # Restore original model if it was changed
+            if original_model:
+                self.llm.model_name = original_model
+            
             return state
             
         except Exception as e:
             logger.error(f"❌ {self.name} failed: {e}", exc_info=True)
             print(f"   ❌ Error: {str(e)[:100]}\n")
+            
+            # Restore original model even on error
+            if original_model:
+                self.llm.model_name = original_model
             
             state['failed_agents'].append(self.agent_id)
             state['messages'].append(f"❌ {self.name} falló: {str(e)}")
