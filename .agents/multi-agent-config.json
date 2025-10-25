@@ -30,7 +30,57 @@
       "tools": ["Architecture diagrams", "Code analysis tools", "Performance profilers", "Integration testing tools"],
       "communication_style": "Strategic oversight with clear technical coordination",
       "decision_authority": "Executive - Overall technical decisions and architecture",
-      "activation_triggers": ["architecture decisions", "cross-team coordination", "technical planning", "system integration"]
+      "activation_triggers": ["architecture decisions", "cross-team coordination", "technical planning", "system integration"],
+      "orchestration": {
+        "availability_map_path": ".agents/agent-availability.json",
+        "task_classifier": {
+          "type": "rules+light-bert",
+          "rules_path": ".agents/task-classifier-rules.yml",
+          "default_map": {
+            "frontend": ["frontend-specialist"],
+            "backend": ["backend-specialist"],
+            "security": ["security-specialist"],
+            "qa": ["qa-specialist"],
+            "devops": ["devops-specialist"],
+            "performance": ["performance-specialist"],
+            "data": ["data-specialist"],
+            "ai": ["ai-specialist"],
+            "business": ["business-specialist"]
+          }
+        },
+        "assignment_rules": {
+          "strategy": "load_balanced_then_skill_match",
+          "fallback": "fullstack-architect",
+          "max_concurrent_tasks_per_agent": 3
+        },
+        "policies": {
+          "security_by_default": true,
+          "require_tests": true,
+          "require_qa_approval": true,
+          "require_code_review": true,
+          "block_merge_on_policy_failure": true
+        },
+        "integrations": {
+          "github": {"enabled": true, "pr_template_path": ".github/PULL_REQUEST_TEMPLATE.md"},
+          "linear": {"enabled": true},
+          "rag": {"path": "rag-knowledge/"}
+        },
+        "pr_handling": {
+          "required_reviewers": ["qa-specialist", "security-specialist", "fullstack-architect"],
+          "codeowners_enforced": true,
+          "auto_create_pr_on_ready": true
+        },
+        "pr_comment_commands": {
+          "enabled": true,
+          "commands": ["/assign-agent", "/apply-suggested", "/run-tests"]
+        },
+        "linear": {
+          "ticket_state_map": {"open": "todo", "in_review": "in review", "qa": "qa", "merged": "done"},
+          "move_on_pr_create": "in_review",
+          "move_on_qa_approval": "qa",
+          "move_on_merge": "merged"
+        }
+      }
     },
     {
       "id": "frontend-specialist",

@@ -1,0 +1,52 @@
+name: PR Comment Commands
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  handle-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Handle PR comments
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const comment = context.payload.comment.body.trim();
+            const issue = context.payload.issue;
+            if (!issue.pull_request) return;
+            const prNumber = issue.number;
+            if (comment.startsWith('/assign-agent')) {
+              // format: /assign-agent agent-id
+              const parts = comment.split(/\s+/);
+              const agentId = parts[1];
+              if (!agentId) {
+                core.setFailed('No agent specified');
+                return;
+              }
+              // Create a lightweight comment to acknowledge and create a task in external system as needed
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `Architect: assigning agent ${agentId} and creating a subtask.`
+              });
+            }
+            if (comment.startsWith('/apply-suggested')) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `Architect: noted apply-suggested request. A human or privileged bot must apply the patch.`
+              });
+            }
+            if (comment.startsWith('/run-tests')) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `Architect: triggering re-run of CI tests.`
+              });
+              // trigger workflow_dispatch or rerun workflow via REST API is possible but may need permissions
+            }

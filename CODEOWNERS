@@ -1,0 +1,7 @@
+# Require QA and Architect reviews for src and infra
+/* @jordimorillo
+src/ @org/qa-team @org/architect
+infra/ @org/security-team @org/architect
+backend/ @org/backend-team @org/security-team
+scripts/ @org/devops-team @org/architect
+*.md @org/architect
