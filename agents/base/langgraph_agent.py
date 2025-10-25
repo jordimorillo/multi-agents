@@ -105,7 +105,7 @@ class LangChainAgentBase(ABC):
         self.executor = AgentExecutor(
             agent=self.agent,
             tools=self.tools,
-            verbose=True,
+            verbose=False,  # Silenciar output técnico para usuarios
             handle_parsing_errors=True,
             max_iterations=10
         )
@@ -462,27 +462,26 @@ class LangChainAgentBase(ABC):
         files_created = result.get('files_created', [])
         files_modified = result.get('files_modified', [])
         
-        if files_created:
-            print(f"   📝 Archivos creados: {len(files_created)}")
-            for f in files_created[:3]:
-                print(f"      • {f}")
-            if len(files_created) > 3:
-                print(f"      ... y {len(files_created) - 3} más")
+        total_changes = len(files_created) + len(files_modified)
         
-        if files_modified:
-            print(f"   ✏️  Archivos modificados: {len(files_modified)}")
-            for f in files_modified[:3]:
+        if total_changes > 0:
+            print(f"   📁 {total_changes} archivo(s) modificado(s)")
+            
+            # Mostrar solo los primeros 2 archivos
+            all_files = files_created + files_modified
+            for f in all_files[:2]:
                 print(f"      • {f}")
-            if len(files_modified) > 3:
-                print(f"      ... y {len(files_modified) - 3} más")
+            if total_changes > 2:
+                print(f"      • ... y {total_changes - 2} más")
         
-        # Show brief summary if available
+        # Show brief summary if available - más conciso
         if summary and len(summary) > 10:
-            # Truncate to first 150 chars
-            short_summary = summary[:150].strip()
-            if len(summary) > 150:
-                short_summary += "..."
-            print(f"   💬 {short_summary}")
+            # Extraer primera línea o primeras 100 chars
+            lines = summary.split('\n')
+            first_line = lines[0].strip() if lines else summary[:100].strip()
+            if len(first_line) > 100:
+                first_line = first_line[:100] + "..."
+            print(f"   💬 {first_line}")
     
     async def _execute_with_retry(
         self, 

@@ -72,7 +72,7 @@ You are the **meta-agent** that makes the system self-improving. After every mul
 
 **Successful Pattern** (extract when quality > 8):
 ```json
-{
+{{
   "id": "pattern_XXX",
   "title": "Pattern name",
   "context": "When this situation occurs",
@@ -80,19 +80,19 @@ You are the **meta-agent** that makes the system self-improving. After every mul
   "success_rate": 0.95,
   "examples": ["intervention_id_1", "intervention_id_2"],
   "confidence": 0.92
-}
+}}
 ```
 
 **Anti-Pattern** (extract when quality < 6):
 ```json
-{
+{{
   "id": "anti_XXX",
   "title": "Anti-pattern name",
   "problem": "What went wrong",
   "consequences": "Impact on outcome",
   "how_to_avoid": "Prevention strategy",
   "examples": ["intervention_id"]
-}
+}}
 ```
 
 ### RAG Update Strategy:
