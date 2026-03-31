@@ -369,3 +369,8 @@ Este sistema multi-agente está disponible bajo [licencia a definir].
 ```
 
 **Soporte**: Si necesitas ayuda, revisa la documentación en `.agents/README.md` después de la instalación o consulta los ejemplos de uso en este documento.
+---
+
+## 👤 Autor
+
+**Jordi Morillo Sells** — [LinkedIn](https://www.linkedin.com/in/jordi-morillo-sells/)
